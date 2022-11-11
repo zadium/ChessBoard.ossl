@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 419
+    @revision: 423
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -389,7 +389,6 @@ default
         setPlace("ActiveFrom", 0, 0);
         setPlace("ActiveTo", 0, 2);
         llListen(0, "", NULL_KEY, "");
-        llRequestPermissions(llGetOwner(), PERMISSION_CHANGE_LINKS);
     }
 
     on_rez(integer number)
@@ -423,13 +422,23 @@ default
 
     touch_start(integer num_detected)
     {
-        key id = llDetectedKey(0);
-        integer link = llDetectedLinkNumber(0);
-        if (link == getLinkByName("ChessFrame"))
-            showDialog(id);
-        else if (link == 1) {  //* 1 is the root CheadBoard
-            vector p = llDetectedTouchPos(0);
-            touched(p);
+    	key id = llDetectedKey(0);
+        if(llGetPermissionsKey() != id)
+        {
+        	llSay(0, "Please give permission to link and unlink");
+//            llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION);
+        	llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
+        }
+        else
+        {
+            key id = llDetectedKey(0);
+            integer link = llDetectedLinkNumber(0);
+            if (link == getLinkByName("ChessFrame"))
+                showDialog(id);
+            else if (link == 1) {  //* 1 is the root CheadBoard
+                vector p = llDetectedTouchPos(0);
+                touched(p);
+	        }
         }
     }
 
