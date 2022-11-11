@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 423
+    @revision: 499
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -12,6 +12,7 @@
 
 /** Options **/
 
+integer debug_mode = TRUE;
 integer owner_only = FALSE;
 
 /** Consts **/
@@ -85,6 +86,9 @@ vector to_place = <0, 0, 0>;
 
 integer active_link;
 integer link_perm = FALSE;
+
+integer PIN = 1;
+string ScriptUpdate = "Piece";
 
 //* case sensitive
 
@@ -231,37 +235,53 @@ rezPiece(string name, integer black, float place_x, float place_y)
     integer index = llListFindList(pieces, [name]);
     if (black) {
         index += llGetListLength(pieces);
-        rez_places += <place_x, place_y, -PI/2>;
+        rez_places += <place_x, place_y, index>;
     }
     else
-        rez_places += <place_x, place_y, PI/2>;
-    rezObject(name, index + 1);
+        rez_places += <place_x, place_y, index>;
+    rezObject(name, index + 1); //* +1 to recive it in object
     //setPlace(guessName(index), x, y);
 }
 
 rezObjects(){
-    rezPiece("Rook", FALSE, 0, 0);
-    rezPiece("Knight", FALSE, 1, 0);
-    rezPiece("Bishop", FALSE, 2, 0);
-    rezPiece("Queen", FALSE, 3, 0);
-    rezPiece("King", FALSE, 4, 0);
-    rezPiece("Bishop", FALSE, 5, 0);
-    rezPiece("Knight", FALSE, 6, 0);
-    rezPiece("Rook", FALSE, 7, 0);
-
     rezPiece("Rook", TRUE, 0, 7);
     rezPiece("Knight", TRUE, 1, 7);
     rezPiece("Bishop", TRUE, 2, 7);
-    rezPiece("Queen", TRUE, 3, 7);
-    rezPiece("King", TRUE, 4, 7);
+    rezPiece("King", TRUE, 3, 7);
+    rezPiece("Queen", TRUE, 4, 7);
     rezPiece("Bishop", TRUE, 5, 7);
     rezPiece("Knight", TRUE, 6, 7);
     rezPiece("Rook", TRUE, 7, 7);
 
-//    rezPiece("Queen", TRUE, 6, 1);
+    rezPiece("Pawn", TRUE, 0, 6);
+    rezPiece("Pawn", TRUE, 1, 6);
+    rezPiece("Pawn", TRUE, 2, 6);
+    rezPiece("Pawn", TRUE, 3, 6);
+    rezPiece("Pawn", TRUE, 4, 6);
+    rezPiece("Pawn", TRUE, 5, 6);
+    rezPiece("Pawn", TRUE, 6, 6);
+    rezPiece("Pawn", TRUE, 7, 6);
+
+    rezPiece("Rook", FALSE, 0, 0);
+    rezPiece("Knight", FALSE, 1, 0);
+    rezPiece("Bishop", FALSE, 2, 0);
+    rezPiece("King", FALSE, 3, 0);
+    rezPiece("Queen", FALSE, 4, 0);
+    rezPiece("Bishop", FALSE, 5, 0);
+    rezPiece("Knight", FALSE, 6, 0);
+    rezPiece("Rook", FALSE, 7, 0);
+
+    rezPiece("Pawn", FALSE, 0, 1);
+    rezPiece("Pawn", FALSE, 1, 1);
+    rezPiece("Pawn", FALSE, 2, 1);
+    rezPiece("Pawn", FALSE, 3, 1);
+    rezPiece("Pawn", FALSE, 4, 1);
+    rezPiece("Pawn", FALSE, 5, 1);
+    rezPiece("Pawn", FALSE, 6, 1);
+    rezPiece("Pawn", FALSE, 7, 1);
 }
 
-resetBoard()
+newBoard()
 {
     rezObjects();
 }
@@ -294,10 +314,8 @@ resized()
 {
     list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_SIZE]);
     size = llList2Vector(values, 0);
-    llOwnerSay("size "+(string)size);
     unit.x = size.x / 8;
     unit.y = size.y / 8;
-    llOwnerSay("unit "+(string)unit);
 }
 
 touched(vector p) {
@@ -341,7 +359,7 @@ list getCmdList(key id, integer owner) {
     else
         l += ["-"];
 
-    l += ["Reset"];
+    l += ["New"];
     l += ["Clear"];
     // Abandon
     // Resign
@@ -384,7 +402,6 @@ default
         dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
 
         board = initBoard;
-        llOwnerSay("------------------------------------------------------");
         resized();
         setPlace("ActiveFrom", 0, 0);
         setPlace("ActiveTo", 0, 2);
@@ -402,15 +419,31 @@ default
         if (perm & PERMISSION_CHANGE_LINKS)
             link_perm = TRUE;
         else
-            llOwnerSay("Can't link.");
+            llOwnerSay("Can't link objects.");
     }
 
     object_rez(key id)
     {
         llCreateLink(id, TRUE);
         integer index = getLinkByKey(id);
+        //llGiveInventory(id, "Piece");
+/*        if (debug_mode)
+            llRemoteLoadScriptPin(id, ScriptUpdate, dialog_channel + PIN, TRUE, 0);*/
         vector v = llList2Vector(rez_places, 0);
         rez_places = llDeleteSubList(rez_places, 0, 0);
+
+        string name = guessName((integer)v.z);
+        vector color;
+        rotation rot = llList2Rot(llGetLinkPrimitiveParams(index, [PRIM_ROT_LOCAL]), 0);
+        if (llGetSubString(name, 1, 1) == "b")
+        {
+            color = <0.15, 0.15, 0.15>;
+            rot = rot * llEuler2Rot(<0, 0, PI>);
+        }
+        else {
+            color = <0.9, 0.9, 0.9>;
+        }
+        llSetLinkPrimitiveParamsFast(index, [PRIM_NAME, name, PRIM_ROT_LOCAL, rot, PRIM_COLOR, ALL_SIDES, color, 1.0, PRIM_BUMP_SHINY, ALL_SIDES, PRIM_SHINY_LOW, PRIM_BUMP_NONE]);
         setLinkPlace(index, v.x, v.y);
     }
 
@@ -422,12 +455,12 @@ default
 
     touch_start(integer num_detected)
     {
-    	key id = llDetectedKey(0);
+        key id = llDetectedKey(0);
         if(llGetPermissionsKey() != id)
         {
-        	llSay(0, "Please give permission to link and unlink");
+            llSay(0, "Please give permission to link and unlink");
 //            llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION);
-        	llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
+            llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
         }
         else
         {
@@ -438,7 +471,7 @@ default
             else if (link == 1) {  //* 1 is the root CheadBoard
                 vector p = llDetectedTouchPos(0);
                 touched(p);
-	        }
+            }
         }
     }
 
@@ -495,8 +528,8 @@ default
                     llSay(0, "You are not registered to leave");
                 }
             }
-            else if (message == "reset" ) {
-                resetBoard();
+            else if (message == "new" ) {
+                newBoard();
             }
             else if (message == "clear" ) {
                 clearBoard();
