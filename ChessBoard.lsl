@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 568
+    @revision: 595
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -52,7 +52,7 @@ list p = [
 ];
 
 //* Piece color List by color used when rez to give names
-list pc = [
+list pNames = [
     "kw",
     "qw",
     "rw",
@@ -68,8 +68,25 @@ list pc = [
     "pb"
 ];
 
+//* Piece color List by color as FEN format
+list fenNames = [
+    "K",
+    "Q",
+    "R",
+    "B",
+    "N",
+    "P",
+
+    "k",
+    "q",
+    "r",
+    "b",
+    "n",
+    "p"
+];
+
 //* initial board
-list initBoard =
+list InitBoard =
 [
     "pb", "pb", "pb", "pb", "pb", "pb", "pb", "pb",
     "rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb",
@@ -81,14 +98,90 @@ list initBoard =
     "rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"
 ];
 
+list EmptyBoard =
+[
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", ""
+];
+
+list EmptyKeys =
+[
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY,
+    NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY, NULL_KEY
+];
+
+printBoard()
+{
+	integer x = 0;
+    integer y = 0;
+    string s;
+    string name;
+    while (y < 8) {
+        x = 0;
+//        if (y != 0)
+		    s += "\n";
+        while (x < 8) {
+        	if (x != 0)
+				s += " ";
+            name = getSquareName(x, y);
+            if (name =="")
+            	name = "--";
+            s += name;
+            x++;
+        }
+        y++;
+    }
+    llSay(0, s);
+}
+list moves; //* list of moves from begining
+
 list board;
 list keys;
-list moves; //* list of moves from begining
+//*------------------------------------*//
+string getSquareName(integer x, integer y)
+{
+    integer index = x * 8 + y;
+    return llList2String(board, index);
+}
+
+setSquareName(integer x, integer y, string piece)
+{
+    integer index = x * 8 + y;
+    board = llListReplaceList(board, [piece], index, index);
+}
+
+string getSquareID(integer x, integer y)
+{
+    integer index = x * 8 + y;
+    return llList2String(keys, index);
+}
+
+setSquareID(integer x, integer y, string piece)
+{
+    integer index = x * 8 + y;
+    keys = llListReplaceList(keys, [piece], index, index);
+}
+//*------------------------------------*//
+
 
 vector unit;
 vector size;
+
 key player_white = NULL_KEY;
 key player_black = NULL_KEY;
+
 vector from_place = <0, 0, 0>; //* used to detect of set, if z = 1 it is set, of 0 not set
 vector to_place = <0, 0, 0>;
 
@@ -123,8 +216,8 @@ key getLinkKey(string name) {
 }
 
 integer getLinkByKey(key id) {
-	if (id == NULL_KEY)
-    	return -1;
+    if (id == NULL_KEY)
+        return -1;
     integer c = llGetNumberOfPrims();
     integer i = 1; //based on 1
     while(i <= c)
@@ -179,41 +272,17 @@ setPlaceByName(string name, float x, float y){
         setLinkPos(index, pos);
 }
 
-string getSquare(integer x, integer y)
-{
-    integer index = x * 8 + y;
-    return llList2String(board, index);
-}
-
-setSquare(integer x, integer y, string piece)
-{
-    integer index = x * 8 + y;
-    board = llListReplaceList(board, [piece], index, index);
-}
-
-string getSquareKey(integer x, integer y)
-{
-    integer index = x * 8 + y;
-    return llList2String(keys, index);
-}
-
-setSquareKey(integer x, integer y, string piece)
-{
-    integer index = x * 8 + y;
-    keys = llListReplaceList(keys, [piece], index, index);
-}
-
 integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
 {
-    string p = getSquare(x1, y1);
-    key k = getSquareKey(x1, y1);
+    string p = getSquareName(x1, y1);
+    key k = getSquareID(x1, y1);
     if (k != NULL_KEY)
     {
-	    setSquare(x1, y1, "");
-        setSquare(x2, y2, p);
+        setSquareName(x1, y1, "");
+        setSquareName(x2, y2, p);
 
-        setSquareKey(x1, y1, NULL_KEY);
-        setSquareKey(x2, y2, k);
+        setSquareID(x1, y1, NULL_KEY);
+        setSquareID(x2, y2, k);
 
         //setPlaceByKey(k, x2, y2);
         //setPlace()
@@ -285,7 +354,7 @@ integer text_move(string msg) {
 }
 
 string guessName(integer index) {
-    return llList2String(pc, index); //* yes -1 based on 0
+    return llList2String(pNames, index); //* yes -1 based on 0
 }
 
 list rez_places = [];
@@ -358,7 +427,7 @@ clearBoard(){
     list l;
     while(i <= c)
     {
-        if (llListFindList(pc, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
+        if (llListFindList(pNames, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
         {
             //llBreakLink(i);
             l += [llGetLinkKey(i)];
@@ -400,6 +469,33 @@ touched(vector p) {
         from_place = v;
         setPlaceByName("ActiveFrom", from_place.x, from_place.y);
         start_move = TRUE;
+    }
+}
+
+//* detect pieces positions fill the lists
+initialize(){
+	llSay(0, "Reading board ...");
+    board = EmptyBoard;
+    keys = EmptyKeys;
+    moves = []; //* list of moves from begining
+
+    integer c = llGetNumberOfPrims();
+    integer i = 1; //based on 1
+    while(i <= c)
+    {
+    	string name = llGetLinkName(i);
+        key id = llGetLinkKey(i);
+        if (llListFindList(pNames, [name]) >= 0)
+        {
+            list values = llGetLinkPrimitiveParams(i, [PRIM_POS_LOCAL]);
+            vector p = llList2Vector(values, 0);
+            integer x = llCeil(p.x / unit.x) + 3;
+            integer y = llCeil(p.y / unit.y) + 3;
+        	llOwnerSay("found " + name + " in " + (string)x+"," +(string)y);
+            setSquareName(x, y, name);
+            setSquareID(x, y, id);
+        }
+        i++;
     }
 }
 
@@ -469,10 +565,11 @@ default
     {
         dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
 
-        board = initBoard;
+        board = InitBoard;
         resized();
         setPlaceByName("ActiveFrom", 0, 0);
         setPlaceByName("ActiveTo", 0, 2);
+        initialize();
         llListen(0, "", NULL_KEY, "");
     }
 
@@ -513,7 +610,7 @@ default
         }
         llSetLinkPrimitiveParamsFast(index, [PRIM_NAME, name, PRIM_ROT_LOCAL, rot, PRIM_COLOR, ALL_SIDES, color, 1.0, PRIM_BUMP_SHINY, ALL_SIDES, PRIM_SHINY_LOW, PRIM_BUMP_NONE]);
         setLinkPlace(index, (integer)v.x, (integer)v.y);
-        setSquareKey((integer)v.x, (integer)v.y, id);
+        setSquareID((integer)v.x, (integer)v.y, id);
     }
 
     changed(integer change)
@@ -562,7 +659,10 @@ default
     listen(integer channel, string name, key id, string message)
     {
         if (channel == 0) {
-            text_move(message);
+        	if (llToLower(message) == "/print board")
+            	printBoard();
+            else
+	            text_move(message);
         }
         else if (channel == dialog_channel)
         {
