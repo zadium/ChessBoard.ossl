@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 387
+    @revision: 398
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -65,12 +65,12 @@ list initBoard =
 [
     "pb", "pb", "pb", "pb", "pb", "pb", "pb", "pb",
     "rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb",
-    "",   "",   "",   "",   "",   "",   "",    "",
-    "",   "",   "",   "",   "",   "",   "",    "",
-    "",   "",   "",   "",   "",   "",   "",    "",
-    "",   "",   "",   "",   "",   "",   "",    "",
-    "rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw",
-    "pw", "pw", "pw", "pw", "pw", "pw", "pw", "pw"
+    "",   "",   "",   "",   "",   "",   "",   "",
+    "",   "",   "",   "",   "",   "",   "",   "",
+    "",   "",   "",   "",   "",   "",   "",   "",
+    "",   "",   "",   "",   "",   "",   "",   "",
+    "pw", "pw", "pw", "pw", "pw", "pw", "pw", "pw",
+    "rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"
 ];
 
 list board;
@@ -241,7 +241,10 @@ clearBoard(){
     while(i <= c)
     {
         if (llListFindList(pc, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
+        {
+        	llOwnerSay("unlink"+(string)i);
             llBreakLink(i);
+        }
         i++;
     }
 }
@@ -365,6 +368,12 @@ default
     object_rez(key id)
     {
         llCreateLink(id, TRUE);
+		integer index = getLinkByKey(id);
+        list values = llGetLinkPrimitiveParams(index, [PRIM_SIZE, PRIM_POS_LOCAL]);
+        vector s = llList2Vector(values, 0);
+        vector v = llList2Vector(values, 1);
+        v.z = s.z / 2 + size.z / 2;
+        llSetLinkPrimitiveParams(index, [PRIM_POSITION, v]);
     }
 
     changed(integer change)
