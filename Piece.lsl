@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 277
+    @revision: 279
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 */
@@ -28,8 +28,7 @@ default
 
     touch(integer num_detected)
     {
-        if (llGetObjectDesc() == "piece")
-            llMessageLinked(LINK_ROOT, llGetStartParameter(), "touch", llGetKey());
+        llMessageLinked(LINK_ROOT, llGetStartParameter(), "touch", llGetKey());
     }
 
     changed(integer change)

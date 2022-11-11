@@ -39,3 +39,15 @@ https://www.chessprogramming.org/Forsyth-Edwards_Notation#Shredder-FEN
 ## Competitions
 
 https://sites.google.com/site/azinsecondlife/chess
+
+https://www.turbosquid.com/3d-models/3d-chess-board-chessboard-1679167
+
+## Textures
+
+https://www.sketchuptextureclub.com/textures/architecture/wood/fine-wood/dark-wood
+
+## References
+
+https://www.dubrovnikchessmen.com/chessmen-design-evolution.html
+
+https://www.chess.com/forum/view/chess-equipment/atheist-chess-pieces
