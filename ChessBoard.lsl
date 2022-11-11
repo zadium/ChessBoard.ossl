@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 265
+    @revision: 276
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -235,7 +235,14 @@ resetBoard()
 }
 
 clearBoard(){
-//    llMessageLinked(LINK_ALL_CHILDREN, 0, "die", NULL_KEY);
+    integer c = llGetNumberOfPrims();
+    integer i = 1; //based on 1
+    while(i <= c)
+    {
+        if (llListFindList(pc, [llGetLinkName(i)])) //* llGetLinkName based on 1
+            llBreakLink(i);
+        i++;
+    }
 }
 
 resized()

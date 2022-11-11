@@ -2,7 +2,7 @@
     @name: Piece
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 223
+    @revision: 240
     @localfile: ?defaultpath\Chess\?@name.lsl
 */
 
@@ -49,14 +49,15 @@ default
         llMessageLinked(LINK_ROOT, llGetStartParameter(), "touch", llGetKey());
     }
 
-    link_message( integer sender_num, integer num, string str, key id )
+    changed(integer change)
     {
-        if (str=="die")
+        if (change & CHANGED_LINK)
         {
-            if (llGetStartParameter()>0)
-            {
+        	if (llGetKey() == llGetLinkKey(LINK_ROOT)) {
+                llOwnerSay("Die");
                 //llDie();
             }
         }
     }
+
 }
