@@ -1,10 +1,10 @@
 /**
     @name: ChessBoard
     @description:
-
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 602
+    @version: 1.19
+    @revision: 624
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -28,7 +28,13 @@ integer none = 0;
 integer white = 1;
 integer black = 2;
 
+integer STATE_NONE = 0;
+integer STATE_TV = 1;
+integer STATE_FREE = 2;
+integer STATE_AI = 3;
+
 /** Variables **/
+
 
 integer turn = 0;
 integer start_move = 0;
@@ -199,6 +205,7 @@ integer getLinkByName(string name)
     integer i = 1; //based on 1
     while(i <= c)
     {
+        //llOwnerSay((string)i+": " +llGetLinkName(i));
         if (llGetLinkName(i) == name) // llGetLinkName based on 1
             return i;
         i++;
@@ -625,14 +632,13 @@ default
         if(llGetPermissionsKey() != id)
         {
             llSay(0, "Please give permission to link and unlink");
-//            llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION);
             llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
         }
         else
         {
             key id = llDetectedKey(0);
             integer link = llDetectedLinkNumber(0);
-            if (link == getLinkByName("ChessFrame"))
+            if (llGetLinkName(link) == "ChessFrame")
                 showDialog(id);
             else if (link == 1) {  //* 1 is the root CheadBoard
                 vector p = llDetectedTouchPos(0);
@@ -650,10 +656,10 @@ default
         }
     }
 
-
     http_response(key request_id, integer status, list metadata, string body)
     {
-        llSay(0, llJsonGetValue(body, ["id"]));
+        //llSay(0, llJsonGetValue(body, ["id"]));
+        llSay(0, body);
     }
 
     listen(integer channel, string name, key id, string message)
@@ -711,7 +717,8 @@ default
             }
             else if (message == "account" )
             {
-                http_request_id = llHTTPRequest("https://lichess.org/api/account", [HTTP_METHOD, "GET", HTTP_CUSTOM_HEADER, "Authorization", "Bearer "+ token], "");
+                //http_request_id = llHTTPRequest("https://lichess.org/api/account", [HTTP_METHOD, "GET", HTTP_CUSTOM_HEADER, "Authorization", "Bearer "+ token], "");
+                http_request_id = llHTTPRequest("https://lichess.org/api/tv/feed", [HTTP_METHOD, "GET"], "");
             }
             else if (message == "white" ) {
                 if (player_white == NULL_KEY) {
