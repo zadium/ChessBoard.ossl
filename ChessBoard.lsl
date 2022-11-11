@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 214
+    @revision: 216
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -219,24 +219,24 @@ integer dialog_listen_id;
 
 list getCmdList(key id, integer owner) {
     list l = [];
-	if (player_white == NULL_KEY)
-    	l += ["White"];
+    if (player_white == NULL_KEY)
+        l += ["White"];
     else
-    	l += ["-"];
-	if (player_black == NULL_KEY)
-    	l += ["Black"];
+        l += ["-"];
+    if (player_black == NULL_KEY)
+        l += ["Black"];
     else
-    	l += ["-"];
-	if (player_white == id)
-    	l += ["Leave"];
+        l += ["-"];
+    if (player_white == id)
+        l += ["Leave"];
     else if (player_black == id)
-    	l += ["Leave"];
+        l += ["Leave"];
     else
-    	l += ["-"];
+        l += ["-"];
 
     l += ["Reset"];
     l += ["Clear"];
-	// Abandon
+    // Abandon
     // Resign
     return l;
 }
@@ -274,7 +274,7 @@ default
 {
     state_entry()
     {
-    	dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
+        dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
 
         board = initBoard;
         resized();
@@ -290,39 +290,39 @@ default
 
     changed(integer change)
     {
-    	if (change & CHANGED_SCALE)
-        	resized();
+        if (change & CHANGED_SCALE)
+            resized();
     }
 
     touch_start(integer num_detected)
     {
-    	key id = llDetectedKey(0);
+        key id = llDetectedKey(0);
         integer link = llDetectedLinkNumber(0);
         if (link == getLinkByName("ChessFrame"))
-        	showDialog(id);
-    	else if (link == 1) {  //* 1 is the root CheadBoard
-        	vector p = llDetectedTouchPos(0);
-			touched(p);
+            showDialog(id);
+        else if (link == 1) {  //* 1 is the root CheadBoard
+            vector p = llDetectedTouchPos(0);
+            touched(p);
         }
     }
 
     link_message( integer sender_num, integer num, string str, key id )
     {
         if (str=="touch") {
-	        list values = llGetLinkPrimitiveParams(sender_num, [PRIM_POSITION]);
-    	    vector p = llList2Vector(values, 0);
-    		touched(p);
-    	}
+            list values = llGetLinkPrimitiveParams(sender_num, [PRIM_POSITION]);
+            vector p = llList2Vector(values, 0);
+            touched(p);
+        }
     }
 
     listen(integer channel, string name, key id, string message)
     {
-    	if (channel == 0) {
+        if (channel == 0) {
             text_move(message);
         }
         else if (channel == dialog_channel)
         {
-        	integer owner = FALSE;
+            integer owner = FALSE;
             if(!owner_only || (toucher_id == llGetOwner())) {
                 owner = TRUE;
             }
@@ -349,45 +349,45 @@ default
                 showDialog(id);
             }
             else if (message == "leave" ) {
-            	if (player_white == id) {
-					player_white = NULL_KEY;
-                    llSay(0, "White is left");
+                if (player_white == id) {
+                    player_white = NULL_KEY;
+                    llSay(0, "White has left");
                 } else if (player_black == id) {
-					player_black = NULL_KEY;
-                    llSay(0, "Black is left");
+                    player_black = NULL_KEY;
+                    llSay(0, "Black has left");
                 } else {
                     llSay(0, "You are not registered to leave");
                 }
             }
             else if (message == "reset" ) {
-            	resetBoard();
+                resetBoard();
             }
             else if (message == "clear" ) {
-            	clearBoard();
+                clearBoard();
             }
             else if (message == "white" ) {
-            	if (player_white == NULL_KEY) {
-                	player_white = id;
+                if (player_white == NULL_KEY) {
+                    player_white = id;
                     if (player_black = id)
-	                    player_black = NULL_KEY;
+                        player_black = NULL_KEY;
                     else
-                    	llSay(0, "Battle!");
+                        llSay(0, "Battle!");
                 }
                 else {
-                	llSay(0, "White is already registered");
+                    llSay(0, "White has already registered");
                 }
                 showDialog(id);
             }
             else if (message == "black" ) {
-            	if (player_black == NULL_KEY) {
-                	player_black = id;
+                if (player_black == NULL_KEY) {
+                    player_black = id;
                     if (player_white = id)
-	                    player_white = NULL_KEY;
+                        player_white = NULL_KEY;
                     else
-                    	llSay(0, "Battle!");
+                        llSay(0, "Battle!");
                 }
                 else {
-                	llSay(0, "Black is already registered");
+                    llSay(0, "Black has already registered");
                 }
                 showDialog(id);
             }
