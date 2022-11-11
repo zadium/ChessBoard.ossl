@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 276
+    @revision: 279
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -226,7 +226,7 @@ rezPiece(string name, integer black, float x, float y)
 
 rezObjects(){
     rezPiece("Queen", FALSE, 1, 1);
-    rezPiece("Queen", TRUE, 6, 1);
+//    rezPiece("Queen", TRUE, 6, 1);
 }
 
 resetBoard()
@@ -239,7 +239,7 @@ clearBoard(){
     integer i = 1; //based on 1
     while(i <= c)
     {
-        if (llListFindList(pc, [llGetLinkName(i)])) //* llGetLinkName based on 1
+        if (llListFindList(pc, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
             llBreakLink(i);
         i++;
     }

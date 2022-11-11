@@ -2,7 +2,7 @@
     @name: Piece
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 240
+    @revision: 241
     @localfile: ?defaultpath\Chess\?@name.lsl
 */
 
@@ -53,9 +53,9 @@ default
     {
         if (change & CHANGED_LINK)
         {
-        	if (llGetKey() == llGetLinkKey(LINK_ROOT)) {
-                llOwnerSay("Die");
-                //llDie();
+            if (llGetKey() == llGetLinkKey(LINK_ROOT)) {
+                //llOwnerSay("Die");
+                llDie();
             }
         }
     }
