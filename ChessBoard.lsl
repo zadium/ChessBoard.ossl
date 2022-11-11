@@ -4,15 +4,15 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 140
+    @revision: 148
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
-    @ref:
-
     @notice:
 
-/** Static Variables **/
+/** Options **/
+
+/** Variables **/
 
 list pieces = [
     "King",
@@ -32,6 +32,7 @@ list p = [
     "p"
 ];
 
+//* lower case is black, upper case is white
 list initBoard = [
 "r", "n", "b", "q", "k", "b", "n", "r",
 "p", "p", "p", "p", "p", "p", "p", "p",
@@ -44,6 +45,10 @@ list initBoard = [
 ];
 
 list board;
+list moves; //* list of moves from begining
+
+key player_white;
+key player_black;
 
 vector unit;
 vector size;
@@ -74,6 +79,7 @@ key getLinkKey(string name) {
         return NULL_KEY;
 }
 
+//* coordinates by meters (inworld)
 setPos(string name, float x, float y){
     integer index = getLinkNumber(name);
     if (index>0) {
@@ -84,7 +90,7 @@ setPos(string name, float x, float y){
     }
 }
 
-//*
+//* coordinates 0-7, 0-7
 setPlace(string name, float x, float y){
     x = x * unit.x - size.x / 2 + unit.x / 2;
     y = y * unit.y - size.y / 2 + unit.y / 2;
@@ -96,51 +102,53 @@ list numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
 
 integer indexOfChar(string s, integer index)
 {
-	return llListFindList(chars, [llGetSubString(s, index, index)]);
+    return llListFindList(chars, [llGetSubString(s, index, index)]);
 /*  llOrd not exists yet in some servers
-	s = llToLower(s);
-	integer i = (llOrd(s, index) - llOrd("a", 0));
+    s = llToLower(s);
+    integer i = (llOrd(s, index) - llOrd("a", 0));
     if ((i>=0) && (i<=7))
-    	return i;
+        return i;
     else
-    	return -1;
+        return -1;
 */
 }
 
 integer indexOfNumber(string s, integer index)
 {
-	return llListFindList(numbers, [llGetSubString(s, index, index)]);
+    return llListFindList(numbers, [llGetSubString(s, index, index)]);
 }
 
 highlight(integer x1, integer y1, integer x2, integer y2)
 {
-	setPlace("ActiveFrom", x1, y1);
+    setPlace("ActiveFrom", x1, y1);
     setPlace("ActiveTo", x2, y2);
 }
 
+//* try to highlight the move, then move a piece, using a string, example b2b4 or b2 b4
 integer try_move(string msg) {
-	integer c = llStringLength(msg);
-	if ((c == 4) || ((c == 5) && (llGetSubString(msg, 2, 2) == " ")))
+    integer c = llStringLength(msg);
+    if ((c == 4) || ((c == 5) && (llGetSubString(msg, 2, 2) == " ")))
     {
-    	integer i = 0;
+        integer i = 0;
         integer x1 = indexOfChar(msg, i);
         i++;
         integer y1 = indexOfNumber(msg, i);
         if (c == 5)
-        	i++;
+            i++;
         i++;
         integer x2 = indexOfChar(msg, i);
         i++;
         integer y2 = indexOfNumber(msg, i);
         if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0)) {
-        	highlight(x1, y1, x2, y2);
+        	//* TODO move a piece here after check if it valide move
+            highlight(x1, y1, x2, y2);
             return TRUE;
         }
         else
-        	return FALSE;
+            return FALSE;
     }
     else
-    	return FALSE;
+        return FALSE;
 }
 
 default
@@ -164,8 +172,8 @@ default
 
     listen(integer channel, string name, key id, string message)
     {
-     	if (channel == 0) {
-        	try_move(message);
+         if (channel == 0) {
+            try_move(message);
         }
     }
 }
