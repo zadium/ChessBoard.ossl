@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 595
+    @revision: 602
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -124,24 +124,24 @@ list EmptyKeys =
 
 printBoard()
 {
-	integer x = 0;
-    integer y = 0;
+    integer x = 0;
+    integer y = 7;
     string s;
     string name;
-    while (y < 8) {
+    while (y >= 0) {
         x = 0;
 //        if (y != 0)
-		    s += "\n";
+            s += "\n";
         while (x < 8) {
-        	if (x != 0)
-				s += " ";
+            if (x != 0)
+                s += " ";
             name = getSquareName(x, y);
             if (name =="")
-            	name = "--";
+                name = "--";
             s += name;
             x++;
         }
-        y++;
+        y--;
     }
     llSay(0, s);
 }
@@ -152,25 +152,25 @@ list keys;
 //*------------------------------------*//
 string getSquareName(integer x, integer y)
 {
-    integer index = x * 8 + y;
+    integer index = y * 8 + x;
     return llList2String(board, index);
 }
 
 setSquareName(integer x, integer y, string piece)
 {
-    integer index = x * 8 + y;
+    integer index = y * 8 + x;
     board = llListReplaceList(board, [piece], index, index);
 }
 
 string getSquareID(integer x, integer y)
 {
-    integer index = x * 8 + y;
+    integer index = y * 8 + x;
     return llList2String(keys, index);
 }
 
 setSquareID(integer x, integer y, string piece)
 {
-    integer index = x * 8 + y;
+    integer index = y * 8 + x;
     keys = llListReplaceList(keys, [piece], index, index);
 }
 //*------------------------------------*//
@@ -284,7 +284,7 @@ integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
         setSquareID(x1, y1, NULL_KEY);
         setSquareID(x2, y2, k);
 
-        //setPlaceByKey(k, x2, y2);
+        setPlaceByKey(k, x2, y2);
         //setPlace()
         return TRUE;
     }
@@ -474,7 +474,7 @@ touched(vector p) {
 
 //* detect pieces positions fill the lists
 initialize(){
-	llSay(0, "Reading board ...");
+    llSay(0, "Reading board ...");
     board = EmptyBoard;
     keys = EmptyKeys;
     moves = []; //* list of moves from begining
@@ -483,7 +483,7 @@ initialize(){
     integer i = 1; //based on 1
     while(i <= c)
     {
-    	string name = llGetLinkName(i);
+        string name = llGetLinkName(i);
         key id = llGetLinkKey(i);
         if (llListFindList(pNames, [name]) >= 0)
         {
@@ -491,7 +491,7 @@ initialize(){
             vector p = llList2Vector(values, 0);
             integer x = llCeil(p.x / unit.x) + 3;
             integer y = llCeil(p.y / unit.y) + 3;
-        	llOwnerSay("found " + name + " in " + (string)x+"," +(string)y);
+            //llOwnerSay("found " + name + " in " + (string)x+"," +(string)y);
             setSquareName(x, y, name);
             setSquareID(x, y, id);
         }
@@ -659,10 +659,10 @@ default
     listen(integer channel, string name, key id, string message)
     {
         if (channel == 0) {
-        	if (llToLower(message) == "/print board")
-            	printBoard();
+            if (llToLower(message) == "/print board")
+                printBoard();
             else
-	            text_move(message);
+                text_move(message);
         }
         else if (channel == dialog_channel)
         {
