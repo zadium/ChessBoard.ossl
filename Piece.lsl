@@ -2,7 +2,7 @@
     @name: Piece
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 241
+    @revision: 242
     @localfile: ?defaultpath\Chess\?@name.lsl
 */
 

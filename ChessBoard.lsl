@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 398
+    @revision: 419
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -129,22 +129,30 @@ vector calcPos(float x, float y) {
     y = y * unit.y - size.y / 2 + unit.y / 2;
     list values = llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_POS_LOCAL]);
     vector pos = llList2Vector(values, 0);
-    return <x, y, size.z / 2 + 0.0001>;
+    return <x, y, 0>;
 }
 
 //* coordinates by meters (inworld)
-setPos(string name, vector pos){
-    integer index = getLinkByName(name);
-    if (index>0) {
-        llSetLinkPrimitiveParams(index, [PRIM_POSITION, pos]);
-    }
+setLinkPos(integer index, vector pos){
+    list values = llGetLinkPrimitiveParams(index, [PRIM_SIZE]);
+    vector s = llList2Vector(values, 0);
+    pos.z = s.z / 2 + size.z / 2;
+    llSetLinkPrimitiveParams(index, [PRIM_POSITION, pos]);
+}
+
+//* coordinates 0-7, 0-7
+setLinkPlace(integer link, float x, float y){
+    vector pos = calcPos(x, y);
+    setLinkPos(link, pos);
 }
 
 //* coordinates 0-7, 0-7
 setPlace(string name, float x, float y){
     vector pos = calcPos(x, y);
-    setPos(name, pos);
+    integer index = getLinkByName(name);
+    setLinkPos(index, pos);
 }
+
 
 list chars = ["a", "b", "c", "d", "e", "f", "g", "h"];
 list numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -209,24 +217,47 @@ string guessName(integer index) {
     return llList2String(pc, index); //* yes -1 based on 0
 }
 
-rezObject(string name, integer param, float x, float y)
+list rez_places = [];
+
+rezObject(string name, integer param)
 {
     rotation rot = llGetRot();
-    vector pos = llGetPos();// + calcPos(x, y);
+    vector pos = llGetPos();
     llRezObject(name, pos, <0, 0, 0>, rot, param);
 }
 
-rezPiece(string name, integer black, float x, float y)
+rezPiece(string name, integer black, float place_x, float place_y)
 {
     integer index = llListFindList(pieces, [name]);
-    if (black)
+    if (black) {
         index += llGetListLength(pieces);
-    rezObject(name, index, x, y);
+        rez_places += <place_x, place_y, -PI/2>;
+    }
+    else
+        rez_places += <place_x, place_y, PI/2>;
+    rezObject(name, index + 1);
     //setPlace(guessName(index), x, y);
 }
 
 rezObjects(){
-    rezPiece("Queen", FALSE, 1, 1);
+    rezPiece("Rook", FALSE, 0, 0);
+    rezPiece("Knight", FALSE, 1, 0);
+    rezPiece("Bishop", FALSE, 2, 0);
+    rezPiece("Queen", FALSE, 3, 0);
+    rezPiece("King", FALSE, 4, 0);
+    rezPiece("Bishop", FALSE, 5, 0);
+    rezPiece("Knight", FALSE, 6, 0);
+    rezPiece("Rook", FALSE, 7, 0);
+
+    rezPiece("Rook", TRUE, 0, 7);
+    rezPiece("Knight", TRUE, 1, 7);
+    rezPiece("Bishop", TRUE, 2, 7);
+    rezPiece("Queen", TRUE, 3, 7);
+    rezPiece("King", TRUE, 4, 7);
+    rezPiece("Bishop", TRUE, 5, 7);
+    rezPiece("Knight", TRUE, 6, 7);
+    rezPiece("Rook", TRUE, 7, 7);
+
 //    rezPiece("Queen", TRUE, 6, 1);
 }
 
@@ -238,13 +269,23 @@ resetBoard()
 clearBoard(){
     integer c = llGetNumberOfPrims();
     integer i = 1; //based on 1
+    list l;
     while(i <= c)
     {
         if (llListFindList(pc, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
         {
-        	llOwnerSay("unlink"+(string)i);
-            llBreakLink(i);
+            //llBreakLink(i);
+            l += [llGetLinkKey(i)];
         }
+        i++;
+    }
+
+    i = 0;
+    integer index = 0;
+    while (i<llGetListLength(l)) {
+        index = getLinkByKey(llList2Key(l, i));
+        if (index>0)
+            llBreakLink(index);
         i++;
     }
 }
@@ -368,12 +409,10 @@ default
     object_rez(key id)
     {
         llCreateLink(id, TRUE);
-		integer index = getLinkByKey(id);
-        list values = llGetLinkPrimitiveParams(index, [PRIM_SIZE, PRIM_POS_LOCAL]);
-        vector s = llList2Vector(values, 0);
-        vector v = llList2Vector(values, 1);
-        v.z = s.z / 2 + size.z / 2;
-        llSetLinkPrimitiveParams(index, [PRIM_POSITION, v]);
+        integer index = getLinkByKey(id);
+        vector v = llList2Vector(rez_places, 0);
+        rez_places = llDeleteSubList(rez_places, 0, 0);
+        setLinkPlace(index, v.x, v.y);
     }
 
     changed(integer change)
