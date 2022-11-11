@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 148
+    @revision: 203
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -12,7 +12,18 @@
 
 /** Options **/
 
+integer owner_only = FALSE;
+
+/** Consts **/
+
+integer none = 0;
+integer white = 1;
+integer black = 2;
+
 /** Variables **/
+
+integer turn = 0;
+integer start_move = 0;
 
 list pieces = [
     "King",
@@ -47,11 +58,12 @@ list initBoard = [
 list board;
 list moves; //* list of moves from begining
 
-key player_white;
-key player_black;
-
 vector unit;
 vector size;
+key player_white = NULL_KEY;
+key player_black = NULL_KEY;
+vector from_place = <0, 0, 0>; //z used to detect of set, if z = 1 it is set, of 0 not set
+vector to_place = <0, 0, 0>;
 
 integer active_link;
 
@@ -124,8 +136,13 @@ highlight(integer x1, integer y1, integer x2, integer y2)
     setPlace("ActiveTo", x2, y2);
 }
 
+try_move(integer x1, integer y1, integer x2, integer y2)
+{
+}
+
+
 //* try to highlight the move, then move a piece, using a string, example b2b4 or b2 b4
-integer try_move(string msg) {
+integer text_move(string msg) {
     integer c = llStringLength(msg);
     if ((c == 4) || ((c == 5) && (llGetSubString(msg, 2, 2) == " ")))
     {
@@ -140,8 +157,8 @@ integer try_move(string msg) {
         i++;
         integer y2 = indexOfNumber(msg, i);
         if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0)) {
-        	//* TODO move a piece here after check if it valide move
-            highlight(x1, y1, x2, y2);
+            //* TODO move a piece here after check if it valide move
+            try_move(x1, y1, x2, y2);
             return TRUE;
         }
         else
@@ -151,15 +168,86 @@ integer try_move(string msg) {
         return FALSE;
 }
 
+resetBoard(){
+}
+
+clearBoard(){
+}
+
+resized()
+{
+    list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_SIZE]);
+    size = llList2Vector(values, 0);
+    unit.x = size.x / 8;
+    unit.y = size.y / 8;
+}
+
+key toucher_id;
+integer dialog_channel;
+integer cur_page; //* current menu page
+integer dialog_listen_id;
+
+list getCmdList(key id, integer owner) {
+    list l = [];
+	if (player_white == NULL_KEY)
+    	l += ["White"];
+    else
+    	l += ["-"];
+	if (player_black == NULL_KEY)
+    	l += ["Black"];
+    else
+    	l += ["-"];
+	if (player_white == id)
+    	l += ["Leave"];
+    else if (player_black == id)
+    	l += ["Leave"];
+    else
+    	l += ["-"];
+
+    l += ["Reset"];
+    l += ["Clear"];
+	// Abandon
+    // Resign
+    return l;
+}
+
+list cmd_list = [ "<--", "---", "-->" ]; //* general navigation
+
+list getCommands(key id, integer owner)
+{
+    //llOwnerSay("page " + (string)page);
+    //listList(gates_name_list);
+    list commands = getCmdList(id, owner);
+    integer length = llGetListLength(commands);
+    if (length >= 9)
+    {
+        integer x = cur_page * 9;
+        return cmd_list + llList2List(commands, x , x + 8);
+    }
+    else {
+        return cmd_list + commands;
+    }
+}
+
+showDialog(key id)
+{
+    llListenRemove(dialog_listen_id);
+    integer owner = FALSE;
+    if(!owner_only || (toucher_id == llGetOwner())) {
+        owner = TRUE;
+    }
+    llDialog(id, "Commands", getCommands(id, owner), dialog_channel);
+    dialog_listen_id = llListen(dialog_channel, "", id, "");
+}
+
 default
 {
     state_entry()
     {
+    	dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
+
         board = initBoard;
-        list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_SIZE]);
-        size = llList2Vector(values, 0);
-        unit.x = size.x / 8;
-        unit.y = size.y / 8;
+        resized();
         setPlace("ActiveFrom", 3, 1);
         setPlace("ActiveTo", 3, 2);
         llListen(0, "", NULL_KEY, "");
@@ -170,10 +258,114 @@ default
         llResetScript();
     }
 
+    changed(integer change)
+    {
+    	if (change & CHANGED_SCALE)
+        	resized();
+    }
+
+
+    touch_start(integer num_detected)
+    {
+    	key id = llDetectedKey(0);
+        integer link = llDetectedLinkNumber(0);
+        if (link == getLinkNumber("ChessFrame"))
+        	showDialog(id);
+    	else if (link == 1) {  //* 1 is the root CheadBoard
+        	vector p = llDetectedTouchPos(0);
+            list values = llGetLinkPrimitiveParams(1, [PRIM_POSITION]);
+            p = llList2Vector(values, 0) - p + <size.x / 2, size.y / 2, 0>;
+            if (start_move == TRUE) {
+            	to_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
+                start_move = FALSE;
+                setPlace("ActiveTo", to_place.x, to_place.y);
+                try_move((integer)from_place.x, (integer)from_place.y, (integer)to_place.x, (integer)to_place.y);
+
+            }
+            else {
+            	from_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
+                setPlace("ActiveFrom", from_place.x, from_place.y);
+                start_move = TRUE;
+            }
+        }
+    }
+
     listen(integer channel, string name, key id, string message)
     {
-         if (channel == 0) {
-            try_move(message);
+    	if (channel == 0) {
+            text_move(message);
+        }
+        else if (channel == dialog_channel)
+        {
+        	integer owner = FALSE;
+            if(!owner_only || (toucher_id == llGetOwner())) {
+                owner = TRUE;
+            }
+
+            llListenRemove(dialog_listen_id);
+
+            message = llToLower(message);
+            if (message == "---")
+            {
+                cur_page = 0;
+                showDialog(id);
+            }
+            else if (message == "<--")
+            {
+                if (cur_page > 0)
+                    cur_page--;
+                showDialog(id);
+            }
+            else if (message == "-->")
+            {
+                integer max_limit = llGetListLength(getCmdList(id, owner)) / 9;
+                if (max_limit >= 1 && cur_page < max_limit)
+                    cur_page++;
+                showDialog(id);
+            }
+            else if (message == "leave" ) {
+            	if (player_white == id) {
+					player_white = NULL_KEY;
+                    llSay(0, "White is left");
+                } else if (player_black == id) {
+					player_black = NULL_KEY;
+                    llSay(0, "Black is left");
+                } else {
+                    llSay(0, "You are not registered to leave");
+                }
+            }
+            else if (message == "reset" ) {
+            	resetBoard();
+            }
+            else if (message == "clear" ) {
+            	clearBoard();
+            }
+            else if (message == "white" ) {
+            	if (player_white == NULL_KEY) {
+                	player_white = id;
+                    if (player_black = id)
+	                    player_black = NULL_KEY;
+                    else
+                    	llSay(0, "Battle!");
+                }
+                else {
+                	llSay(0, "White is already registered");
+                }
+                showDialog(id);
+            }
+            else if (message == "black" ) {
+            	if (player_black == NULL_KEY) {
+                	player_black = id;
+                    if (player_white = id)
+	                    player_white = NULL_KEY;
+                    else
+                    	llSay(0, "Battle!");
+                }
+                else {
+                	llSay(0, "Black is already registered");
+                }
+                showDialog(id);
+            }
         }
     }
 }
