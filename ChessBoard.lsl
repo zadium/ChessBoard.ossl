@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 203
+    @revision: 214
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -69,7 +69,7 @@ integer active_link;
 
 //* case sensitive
 
-integer getLinkNumber(string name)
+integer getLinkByName(string name)
 {
     integer c = llGetNumberOfPrims();
     integer i = 1; //based on 1
@@ -84,16 +84,29 @@ integer getLinkNumber(string name)
 }
 
 key getLinkKey(string name) {
-    integer index = getLinkNumber(name);
+    integer index = getLinkByName(name);
     if (index>0)
         return llGetLinkKey(index);
     else
         return NULL_KEY;
 }
 
+integer getLinkByKey(key id) {
+    integer c = llGetNumberOfPrims();
+    integer i = 1; //based on 1
+    while(i <= c)
+    {
+        if (llGetLinkKey(i) == id) // llGetLinkName based on 1
+            return i;
+        i++;
+    }
+    llOwnerSay("Could not find " + (string)id);
+    return -1;
+}
+
 //* coordinates by meters (inworld)
 setPos(string name, float x, float y){
-    integer index = getLinkNumber(name);
+    integer index = getLinkByName(name);
     if (index>0) {
         list values = llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_POS_LOCAL]);
         vector pos = llList2Vector(values, 0);
@@ -182,6 +195,23 @@ resized()
     unit.y = size.y / 8;
 }
 
+touched(vector p) {
+    list values = llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_POSITION]);
+    p = llList2Vector(values, 0) - p + <size.x / 2, size.y / 2, 0>;
+    if (start_move == TRUE) {
+        to_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
+        start_move = FALSE;
+        setPlace("ActiveTo", to_place.x, to_place.y);
+        try_move((integer)from_place.x, (integer)from_place.y, (integer)to_place.x, (integer)to_place.y);
+
+    }
+    else {
+        from_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
+        setPlace("ActiveFrom", from_place.x, from_place.y);
+        start_move = TRUE;
+    }
+}
+
 key toucher_id;
 integer dialog_channel;
 integer cur_page; //* current menu page
@@ -264,30 +294,25 @@ default
         	resized();
     }
 
-
     touch_start(integer num_detected)
     {
     	key id = llDetectedKey(0);
         integer link = llDetectedLinkNumber(0);
-        if (link == getLinkNumber("ChessFrame"))
+        if (link == getLinkByName("ChessFrame"))
         	showDialog(id);
     	else if (link == 1) {  //* 1 is the root CheadBoard
         	vector p = llDetectedTouchPos(0);
-            list values = llGetLinkPrimitiveParams(1, [PRIM_POSITION]);
-            p = llList2Vector(values, 0) - p + <size.x / 2, size.y / 2, 0>;
-            if (start_move == TRUE) {
-            	to_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
-                start_move = FALSE;
-                setPlace("ActiveTo", to_place.x, to_place.y);
-                try_move((integer)from_place.x, (integer)from_place.y, (integer)to_place.x, (integer)to_place.y);
-
-            }
-            else {
-            	from_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
-                setPlace("ActiveFrom", from_place.x, from_place.y);
-                start_move = TRUE;
-            }
+			touched(p);
         }
+    }
+
+    link_message( integer sender_num, integer num, string str, key id )
+    {
+        if (str=="touch") {
+	        list values = llGetLinkPrimitiveParams(sender_num, [PRIM_POSITION]);
+    	    vector p = llList2Vector(values, 0);
+    		touched(p);
+    	}
     }
 
     listen(integer channel, string name, key id, string message)
