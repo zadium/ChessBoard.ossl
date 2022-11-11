@@ -4,13 +4,20 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 499
+    @revision: 568
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
     @notice:
 
+    FEN notation
+
+        https://www.chessprogramming.org/Forsyth-Edwards_Notation#Shredder-FEN
+        https://gbud.in/blog/game/chess/chess-fen-forsyth-edwards-notation.html#castling-availability
+
 /** Options **/
+string token = "";
+key http_request_id;
 
 integer debug_mode = TRUE;
 integer owner_only = FALSE;
@@ -75,6 +82,7 @@ list initBoard =
 ];
 
 list board;
+list keys;
 list moves; //* list of moves from begining
 
 vector unit;
@@ -115,6 +123,8 @@ key getLinkKey(string name) {
 }
 
 integer getLinkByKey(key id) {
+	if (id == NULL_KEY)
+    	return -1;
     integer c = llGetNumberOfPrims();
     integer i = 1; //based on 1
     while(i <= c)
@@ -123,7 +133,7 @@ integer getLinkByKey(key id) {
             return i;
         i++;
     }
-    llOwnerSay("Could not find " + (string)id);
+    llOwnerSay("Could not find key: " + (string)id);
     return -1;
 }
 
@@ -141,22 +151,77 @@ setLinkPos(integer index, vector pos){
     list values = llGetLinkPrimitiveParams(index, [PRIM_SIZE]);
     vector s = llList2Vector(values, 0);
     pos.z = s.z / 2 + size.z / 2;
-    llSetLinkPrimitiveParams(index, [PRIM_POSITION, pos]);
+    llSetLinkPrimitiveParamsFast(index, [PRIM_POSITION, pos]);
 }
 
 //* coordinates 0-7, 0-7
-setLinkPlace(integer link, float x, float y){
+setLinkPlace(integer link, integer x, integer y){
     vector pos = calcPos(x, y);
-    setLinkPos(link, pos);
+    if (link >= 0)
+        setLinkPos(link, pos);
+    else
+        llOwnerSay("Error: You can move non exists link");
 }
 
 //* coordinates 0-7, 0-7
-setPlace(string name, float x, float y){
+setPlaceByKey(key k, float x, float y){
+    vector pos = calcPos(x, y);
+    integer index = getLinkByKey(k);
+    if (index >= 0)
+        setLinkPos(index, pos);
+}
+
+//* coordinates 0-7, 0-7
+setPlaceByName(string name, float x, float y){
     vector pos = calcPos(x, y);
     integer index = getLinkByName(name);
-    setLinkPos(index, pos);
+    if (index >= 0)
+        setLinkPos(index, pos);
 }
 
+string getSquare(integer x, integer y)
+{
+    integer index = x * 8 + y;
+    return llList2String(board, index);
+}
+
+setSquare(integer x, integer y, string piece)
+{
+    integer index = x * 8 + y;
+    board = llListReplaceList(board, [piece], index, index);
+}
+
+string getSquareKey(integer x, integer y)
+{
+    integer index = x * 8 + y;
+    return llList2String(keys, index);
+}
+
+setSquareKey(integer x, integer y, string piece)
+{
+    integer index = x * 8 + y;
+    keys = llListReplaceList(keys, [piece], index, index);
+}
+
+integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
+{
+    string p = getSquare(x1, y1);
+    key k = getSquareKey(x1, y1);
+    if (k != NULL_KEY)
+    {
+	    setSquare(x1, y1, "");
+        setSquare(x2, y2, p);
+
+        setSquareKey(x1, y1, NULL_KEY);
+        setSquareKey(x2, y2, k);
+
+        //setPlaceByKey(k, x2, y2);
+        //setPlace()
+        return TRUE;
+    }
+    else
+        return FALSE;
+}
 
 list chars = ["a", "b", "c", "d", "e", "f", "g", "h"];
 list numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -181,14 +246,16 @@ integer indexOfNumber(string s, integer index)
 
 highlight(integer x1, integer y1, integer x2, integer y2)
 {
-    setPlace("ActiveFrom", x1, y1);
-    setPlace("ActiveTo", x2, y2);
+    setPlaceByName("ActiveFrom", x1, y1);
+    setPlaceByName("ActiveTo", x2, y2);
 }
 
-try_move(integer x1, integer y1, integer x2, integer y2)
+tryMove(integer x1, integer y1, integer x2, integer y2)
 {
+//    setPlaceByName("ActiveFrom", x1, y1);
+//    setPlaceByName("ActiveTo", x2, y2);
+    movePiece((integer)x1, (integer)y1, (integer)x2, (integer)y2, TRUE);
 }
-
 
 //* try to highlight the move, then move a piece, using a string, example b2b4 or b2 b4
 integer text_move(string msg) {
@@ -207,7 +274,7 @@ integer text_move(string msg) {
         integer y2 = indexOfNumber(msg, i);
         if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0)) {
             //* TODO move a piece here after check if it valide move
-            try_move(x1, y1, x2, y2);
+            tryMove(x1, y1, x2, y2);
             return TRUE;
         }
         else
@@ -240,7 +307,6 @@ rezPiece(string name, integer black, float place_x, float place_y)
     else
         rez_places += <place_x, place_y, index>;
     rezObject(name, index + 1); //* +1 to recive it in object
-    //setPlace(guessName(index), x, y);
 }
 
 rezObjects(){
@@ -327,12 +393,12 @@ touched(vector p) {
     if (start_move == TRUE) {
         to_place = v;
         start_move = FALSE;
-        setPlace("ActiveTo", to_place.x, to_place.y);
-        try_move(llFloor(from_place.x), llFloor(from_place.y), llFloor(to_place.x), llFloor(to_place.y));
+        setPlaceByName("ActiveTo", to_place.x, to_place.y);
+        tryMove(llFloor(from_place.x), llFloor(from_place.y), llFloor(to_place.x), llFloor(to_place.y));
     }
     else {
         from_place = v;
-        setPlace("ActiveFrom", from_place.x, from_place.y);
+        setPlaceByName("ActiveFrom", from_place.x, from_place.y);
         start_move = TRUE;
     }
 }
@@ -361,6 +427,8 @@ list getCmdList(key id, integer owner) {
 
     l += ["New"];
     l += ["Clear"];
+    l += ["Token"];
+    l += ["Account"];
     // Abandon
     // Resign
     return l;
@@ -403,8 +471,8 @@ default
 
         board = initBoard;
         resized();
-        setPlace("ActiveFrom", 0, 0);
-        setPlace("ActiveTo", 0, 2);
+        setPlaceByName("ActiveFrom", 0, 0);
+        setPlaceByName("ActiveTo", 0, 2);
         llListen(0, "", NULL_KEY, "");
     }
 
@@ -444,7 +512,8 @@ default
             color = <0.9, 0.9, 0.9>;
         }
         llSetLinkPrimitiveParamsFast(index, [PRIM_NAME, name, PRIM_ROT_LOCAL, rot, PRIM_COLOR, ALL_SIDES, color, 1.0, PRIM_BUMP_SHINY, ALL_SIDES, PRIM_SHINY_LOW, PRIM_BUMP_NONE]);
-        setLinkPlace(index, v.x, v.y);
+        setLinkPlace(index, (integer)v.x, (integer)v.y);
+        setSquareKey((integer)v.x, (integer)v.y, id);
     }
 
     changed(integer change)
@@ -482,6 +551,12 @@ default
             vector p = llList2Vector(values, 0);
             touched(p);
         }
+    }
+
+
+    http_response(key request_id, integer status, list metadata, string body)
+    {
+        llSay(0, llJsonGetValue(body, ["id"]));
     }
 
     listen(integer channel, string name, key id, string message)
@@ -533,6 +608,10 @@ default
             }
             else if (message == "clear" ) {
                 clearBoard();
+            }
+            else if (message == "account" )
+            {
+                http_request_id = llHTTPRequest("https://lichess.org/api/account", [HTTP_METHOD, "GET", HTTP_CUSTOM_HEADER, "Authorization", "Bearer "+ token], "");
             }
             else if (message == "white" ) {
                 if (player_white == NULL_KEY) {

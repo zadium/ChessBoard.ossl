@@ -29,3 +29,13 @@ In Blender in object mode, select all, export as Dae file, Import it to opensim 
   * Take it all
   * Copy it to into root of ChessBoard
   * Reset scripts
+
+ ## FEN notation
+
+https://www.chessprogramming.org/Forsyth-Edwards_Notation#Shredder-FEN
+https://gbud.in/blog/game/chess/chess-fen-forsyth-edwards-notation.html#castling-availability
+https://www.chessprogramming.org/Forsyth-Edwards_Notation#Shredder-FEN
+
+## Competitions
+
+https://sites.google.com/site/azinsecondlife/chess
