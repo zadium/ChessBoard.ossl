@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 368
+    @revision: 387
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -257,24 +257,11 @@ resized()
 }
 
 touched(vector p) {
-    llOwnerSay("------------------------------------------------------");
-    //llOwnerSay("hina p "+(string)p);
     list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_POSITION, PRIM_ROTATION]);
     vector center = llList2Vector(values, 0);
-
-    rotation rot = llEuler2Rot(-llRot2Euler(llGetRot())); //* need to invert rotation of root object to correct pos
-    //llOwnerSay("rot "+(string)(llRot2Euler(rot)*RAD_TO_DEG));
-    //llOwnerSay("center "+(string)center);
-    //llOwnerSay("p1 "+(string)p);
-    p = (p - center);
-    //llOwnerSay("c-p "+(string)p);
-    p = p * rot;
-    //llOwnerSay("p * rot "+(string)p);
+    p = (p - center) / llList2Rot(values, 1);
     p = (p + <size.x / 2, size.y / 2, 0>); //* Shift to make 0,0 in bottom left of board
-    //llOwnerSay("p2 "+(string)p);
     vector v = <llFloor(p.x / unit.x), llFloor(p.y / unit.y), 0>; //* calc sequares numbers
-    //llOwnerSay("v "+(string)v);
-
     if (start_move == TRUE) {
         to_place = v;
         start_move = FALSE;
