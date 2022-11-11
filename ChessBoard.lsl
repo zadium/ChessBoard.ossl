@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 279
+    @revision: 368
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -61,15 +61,16 @@ list pc = [
 ];
 
 //* initial board
-list initBoard = [
-"pb", "pb", "pb", "pb", "pb", "pb", "pb", "pb",
-"rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb",
-"", "", "", "", "", "", "", "",
-"", "", "", "", "", "", "", "",
-"", "", "", "", "", "", "", "",
-"", "", "", "", "", "", "", "",
-"rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw",
-"pw", "pw", "pw", "pw", "pw", "pw", "pw", "pw"
+list initBoard =
+[
+    "pb", "pb", "pb", "pb", "pb", "pb", "pb", "pb",
+    "rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb",
+    "",   "",   "",   "",   "",   "",   "",    "",
+    "",   "",   "",   "",   "",   "",   "",    "",
+    "",   "",   "",   "",   "",   "",   "",    "",
+    "",   "",   "",   "",   "",   "",   "",    "",
+    "rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw",
+    "pw", "pw", "pw", "pw", "pw", "pw", "pw", "pw"
 ];
 
 list board;
@@ -79,7 +80,7 @@ vector unit;
 vector size;
 key player_white = NULL_KEY;
 key player_black = NULL_KEY;
-vector from_place = <0, 0, 0>; //z used to detect of set, if z = 1 it is set, of 0 not set
+vector from_place = <0, 0, 0>; //* used to detect of set, if z = 1 it is set, of 0 not set
 vector to_place = <0, 0, 0>;
 
 integer active_link;
@@ -249,22 +250,39 @@ resized()
 {
     list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_SIZE]);
     size = llList2Vector(values, 0);
+    llOwnerSay("size "+(string)size);
     unit.x = size.x / 8;
     unit.y = size.y / 8;
+    llOwnerSay("unit "+(string)unit);
 }
 
 touched(vector p) {
-    list values = llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_POSITION]);
-    p = llList2Vector(values, 0) - p + <size.x / 2, size.y / 2, 0>;
+    llOwnerSay("------------------------------------------------------");
+    //llOwnerSay("hina p "+(string)p);
+    list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_POSITION, PRIM_ROTATION]);
+    vector center = llList2Vector(values, 0);
+
+    rotation rot = llEuler2Rot(-llRot2Euler(llGetRot())); //* need to invert rotation of root object to correct pos
+    //llOwnerSay("rot "+(string)(llRot2Euler(rot)*RAD_TO_DEG));
+    //llOwnerSay("center "+(string)center);
+    //llOwnerSay("p1 "+(string)p);
+    p = (p - center);
+    //llOwnerSay("c-p "+(string)p);
+    p = p * rot;
+    //llOwnerSay("p * rot "+(string)p);
+    p = (p + <size.x / 2, size.y / 2, 0>); //* Shift to make 0,0 in bottom left of board
+    //llOwnerSay("p2 "+(string)p);
+    vector v = <llFloor(p.x / unit.x), llFloor(p.y / unit.y), 0>; //* calc sequares numbers
+    //llOwnerSay("v "+(string)v);
+
     if (start_move == TRUE) {
-        to_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
+        to_place = v;
         start_move = FALSE;
         setPlace("ActiveTo", to_place.x, to_place.y);
-        try_move((integer)from_place.x, (integer)from_place.y, (integer)to_place.x, (integer)to_place.y);
-
+        try_move(llFloor(from_place.x), llFloor(from_place.y), llFloor(to_place.x), llFloor(to_place.y));
     }
     else {
-        from_place = <(integer)(p.x / unit.x), (integer)(p.y / unit.y), 0>;
+        from_place = v;
         setPlace("ActiveFrom", from_place.x, from_place.y);
         start_move = TRUE;
     }
@@ -335,9 +353,10 @@ default
         dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
 
         board = initBoard;
+        llOwnerSay("------------------------------------------------------");
         resized();
-        setPlace("ActiveFrom", 3, 1);
-        setPlace("ActiveTo", 3, 2);
+        setPlace("ActiveFrom", 0, 0);
+        setPlace("ActiveTo", 0, 2);
         llListen(0, "", NULL_KEY, "");
         llRequestPermissions(llGetOwner(), PERMISSION_CHANGE_LINKS);
     }
