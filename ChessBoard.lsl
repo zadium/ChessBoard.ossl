@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 225
+    @revision: 265
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -28,31 +28,48 @@ integer start_move = 0;
 list pieces = [
     "King",
     "Queen",
+    "Rook",
     "Bishop",
     "Knight",
-    "Rook",
     "Pawn"
 ];
 
 list p = [
     "k",
     "q",
-    "b",
-    "k",
     "r",
+    "b",
+    "n",
     "p"
 ];
 
-//* lower case is black, upper case is white
+//* Piece color List by color used when rez to give names
+list pc = [
+    "kw",
+    "qw",
+    "rw",
+    "bw",
+    "nw",
+    "pw",
+
+    "kb",
+    "qb",
+    "rb",
+    "bb",
+    "nb",
+    "pb"
+];
+
+//* initial board
 list initBoard = [
-"r", "n", "b", "q", "k", "b", "n", "r",
-"p", "p", "p", "p", "p", "p", "p", "p",
+"pb", "pb", "pb", "pb", "pb", "pb", "pb", "pb",
+"rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb",
 "", "", "", "", "", "", "", "",
 "", "", "", "", "", "", "", "",
 "", "", "", "", "", "", "", "",
 "", "", "", "", "", "", "", "",
-"P", "P", "P", "P", "P", "P", "P", "P",
-"R", "N", "B", "Q", "K", "B", "N", "R"
+"rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw",
+"pw", "pw", "pw", "pw", "pw", "pw", "pw", "pw"
 ];
 
 list board;
@@ -105,22 +122,27 @@ integer getLinkByKey(key id) {
     return -1;
 }
 
+//*
+vector calcPos(float x, float y) {
+    x = x * unit.x - size.x / 2 + unit.x / 2;
+    y = y * unit.y - size.y / 2 + unit.y / 2;
+    list values = llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_POS_LOCAL]);
+    vector pos = llList2Vector(values, 0);
+    return <x, y, size.z / 2 + 0.0001>;
+}
+
 //* coordinates by meters (inworld)
-setPos(string name, float x, float y){
+setPos(string name, vector pos){
     integer index = getLinkByName(name);
     if (index>0) {
-        list values = llGetLinkPrimitiveParams(LINK_ROOT, [PRIM_POS_LOCAL]);
-        vector pos = llList2Vector(values, 0);
-        pos = <x, y, size.z / 2 + 0.0001>;
         llSetLinkPrimitiveParams(index, [PRIM_POSITION, pos]);
     }
 }
 
 //* coordinates 0-7, 0-7
 setPlace(string name, float x, float y){
-    x = x * unit.x - size.x / 2 + unit.x / 2;
-    y = y * unit.y - size.y / 2 + unit.y / 2;
-    setPos(name, x, y);
+    vector pos = calcPos(x, y);
+    setPos(name, pos);
 }
 
 list chars = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -182,24 +204,38 @@ integer text_move(string msg) {
         return FALSE;
 }
 
-rezObject(string name, integer param)
+string guessName(integer index) {
+    return llList2String(pc, index); //* yes -1 based on 0
+}
+
+rezObject(string name, integer param, float x, float y)
 {
-    vector myPos = llGetPos();
-    rotation myRot = llGetRot();
-    llRezObject(name, myPos, <0, 0, 0>, myRot, param);
+    rotation rot = llGetRot();
+    vector pos = llGetPos();// + calcPos(x, y);
+    llRezObject(name, pos, <0, 0, 0>, rot, param);
+}
+
+rezPiece(string name, integer black, float x, float y)
+{
+    integer index = llListFindList(pieces, [name]);
+    if (black)
+        index += llGetListLength(pieces);
+    rezObject(name, index, x, y);
+    //setPlace(guessName(index), x, y);
 }
 
 rezObjects(){
-    rezObject("Queen", 1);
-    rezObject("King", 2);
+    rezPiece("Queen", FALSE, 1, 1);
+    rezPiece("Queen", TRUE, 6, 1);
 }
 
 resetBoard()
 {
-	rezObjects();
+    rezObjects();
 }
 
 clearBoard(){
+//    llMessageLinked(LINK_ALL_CHILDREN, 0, "die", NULL_KEY);
 }
 
 resized()
@@ -297,7 +333,6 @@ default
         setPlace("ActiveTo", 3, 2);
         llListen(0, "", NULL_KEY, "");
         llRequestPermissions(llGetOwner(), PERMISSION_CHANGE_LINKS);
-
     }
 
     on_rez(integer number)
@@ -309,10 +344,9 @@ default
     {
 
         if (perm & PERMISSION_CHANGE_LINKS)
-            ///rezObjects();
             link_perm = TRUE;
         else
-            llOwnerSay("Sorry, we can't link.");
+            llOwnerSay("Can't link.");
     }
 
     object_rez(key id)

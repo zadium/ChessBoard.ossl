@@ -23,7 +23,8 @@ In object mode, select all, export as Dae file, Import it to opensim using Fires
   * Rezz it in the world
   * Set texture and color to white
   * Unlink all chessboard
-  * Rename it to right name, care about letter case, "King", "Queen", "Rock", "Bishop", "Knight", "Pown"
+  * Rename it to right name, care about letter case, "King", "Queen", "Rook", "Bishop", "Knight", "Pown"
+  * Copy Piece.lsl script into each one
   * Take it all
   * Copy it to into root of ChessBoard
   * Reset scripts
