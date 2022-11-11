@@ -4,7 +4,7 @@
 
     @author: Zai Dium
     @update: 2022-02-16
-    @revision: 216
+    @revision: 225
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -66,6 +66,7 @@ vector from_place = <0, 0, 0>; //z used to detect of set, if z = 1 it is set, of
 vector to_place = <0, 0, 0>;
 
 integer active_link;
+integer link_perm = FALSE;
 
 //* case sensitive
 
@@ -181,7 +182,21 @@ integer text_move(string msg) {
         return FALSE;
 }
 
-resetBoard(){
+rezObject(string name, integer param)
+{
+    vector myPos = llGetPos();
+    rotation myRot = llGetRot();
+    llRezObject(name, myPos, <0, 0, 0>, myRot, param);
+}
+
+rezObjects(){
+    rezObject("Queen", 1);
+    rezObject("King", 2);
+}
+
+resetBoard()
+{
+	rezObjects();
 }
 
 clearBoard(){
@@ -281,11 +296,28 @@ default
         setPlace("ActiveFrom", 3, 1);
         setPlace("ActiveTo", 3, 2);
         llListen(0, "", NULL_KEY, "");
+        llRequestPermissions(llGetOwner(), PERMISSION_CHANGE_LINKS);
+
     }
 
     on_rez(integer number)
     {
         llResetScript();
+    }
+
+    run_time_permissions(integer perm)
+    {
+
+        if (perm & PERMISSION_CHANGE_LINKS)
+            ///rezObjects();
+            link_perm = TRUE;
+        else
+            llOwnerSay("Sorry, we can't link.");
+    }
+
+    object_rez(key id)
+    {
+        llCreateLink(id, TRUE);
     }
 
     changed(integer change)
