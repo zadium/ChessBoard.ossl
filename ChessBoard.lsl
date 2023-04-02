@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 624
+    @revision: 632
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -511,7 +511,7 @@ integer dialog_channel;
 integer cur_page; //* current menu page
 integer dialog_listen_id;
 
-list getCmdList(key id, integer owner) {
+list getMenuList(key id, integer owner) {
     list l = [];
     if (player_white == NULL_KEY)
         l += ["White"];
@@ -543,7 +543,7 @@ list getCommands(key id, integer owner)
 {
     //llOwnerSay("page " + (string)page);
     //listList(gates_name_list);
-    list commands = getCmdList(id, owner);
+    list commands = getMenuList(id, owner);
     integer length = llGetListLength(commands);
     if (length >= 9)
     {
@@ -659,7 +659,7 @@ default
     http_response(key request_id, integer status, list metadata, string body)
     {
         //llSay(0, llJsonGetValue(body, ["id"]));
-        llSay(0, body);
+        //llSay(0, body);
     }
 
     listen(integer channel, string name, key id, string message)
@@ -693,8 +693,8 @@ default
             }
             else if (message == "-->")
             {
-                integer max_limit = llGetListLength(getCmdList(id, owner)) / 9;
-                if (max_limit >= 1 && cur_page < max_limit)
+                integer max_limit = (llGetListLength(getMenuList(id, owner))-1) / 9;
+                if (cur_page < max_limit)
                     cur_page++;
                 showDialog(id);
             }
@@ -718,7 +718,7 @@ default
             else if (message == "account" )
             {
                 //http_request_id = llHTTPRequest("https://lichess.org/api/account", [HTTP_METHOD, "GET", HTTP_CUSTOM_HEADER, "Authorization", "Bearer "+ token], "");
-                http_request_id = llHTTPRequest("https://lichess.org/api/tv/feed", [HTTP_METHOD, "GET"], "");
+                //http_request_id = llHTTPRequest("https://lichess.org/api/tv/feed", [HTTP_METHOD, "GET"], "");
             }
             else if (message == "white" ) {
                 if (player_white == NULL_KEY) {
