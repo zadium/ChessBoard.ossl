@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 632
+    @revision: 658
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -151,6 +151,7 @@ printBoard()
     }
     llSay(0, s);
 }
+
 list moves; //* list of moves from begining
 
 list board;
