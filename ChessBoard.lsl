@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 658
+    @revision: 680
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -200,29 +200,6 @@ string ScriptUpdate = "Piece";
 
 //* case sensitive
 
-integer getLinkByName(string name)
-{
-    integer c = llGetNumberOfPrims();
-    integer i = 1; //based on 1
-    while(i <= c)
-    {
-        //llOwnerSay((string)i+": " +llGetLinkName(i));
-        if (llGetLinkName(i) == name) // llGetLinkName based on 1
-            return i;
-        i++;
-    }
-    llOwnerSay("Could not find " + name);
-    return -1;
-}
-
-key getLinkKey(string name) {
-    integer index = getLinkByName(name);
-    if (index>0)
-        return llGetLinkKey(index);
-    else
-        return NULL_KEY;
-}
-
 integer getLinkByKey(key id) {
     if (id == NULL_KEY)
         return -1;
@@ -275,10 +252,26 @@ setPlaceByKey(key k, float x, float y){
 //* coordinates 0-7, 0-7
 setPlaceByName(string name, float x, float y){
     vector pos = calcPos(x, y);
-    integer index = getLinkByName(name);
+    integer index = osGetLinkNumber(name);
     if (index >= 0)
         setLinkPos(index, pos);
 }
+
+//* coordinates 0-7, 0-7
+showByName(string name, float x, float y, integer show){
+    vector pos = calcPos(x, y);
+    integer link = osGetLinkNumber(name);
+    if (link >= 0)
+    {
+        setLinkPos(link, pos);
+        vector color = llList2Vector(llGetLinkPrimitiveParams(link, [PRIM_COLOR, ALL_SIDES]), 0);
+        if (show)
+            llSetLinkPrimitiveParams(link, [PRIM_COLOR, ALL_SIDES, color, 1]);
+        else
+            llSetLinkPrimitiveParams(link, [PRIM_COLOR, ALL_SIDES, color, 0]);
+    }
+}
+
 
 integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
 {
@@ -424,7 +417,7 @@ rezObjects(){
     rezPiece("Pawn", FALSE, 7, 1);
 }
 
-newBoard()
+setupBoard()
 {
     rezObjects();
 }
@@ -470,12 +463,13 @@ touched(vector p) {
     if (start_move == TRUE) {
         to_place = v;
         start_move = FALSE;
-        setPlaceByName("ActiveTo", to_place.x, to_place.y);
+        showByName("ActiveTo", to_place.x, to_place.y, TRUE);
         tryMove(llFloor(from_place.x), llFloor(from_place.y), llFloor(to_place.x), llFloor(to_place.y));
     }
     else {
         from_place = v;
         setPlaceByName("ActiveFrom", from_place.x, from_place.y);
+        showByName("ActiveTo", from_place.x, from_place.y, FALSE);
         start_move = TRUE;
     }
 }
@@ -529,7 +523,7 @@ list getMenuList(key id, integer owner) {
     else
         l += ["-"];
 
-    l += ["New"];
+    l += ["Setup"];
     l += ["Clear"];
     l += ["Token"];
     l += ["Account"];
@@ -590,7 +584,10 @@ default
     {
 
         if (perm & PERMISSION_CHANGE_LINKS)
+        {
             link_perm = TRUE;
+            setupBoard();
+        }
         else
             llOwnerSay("Can't link objects.");
     }
@@ -630,21 +627,12 @@ default
     touch_start(integer num_detected)
     {
         key id = llDetectedKey(0);
-        if(llGetPermissionsKey() != id)
-        {
-            llSay(0, "Please give permission to link and unlink");
-            llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
-        }
-        else
-        {
-            key id = llDetectedKey(0);
-            integer link = llDetectedLinkNumber(0);
-            if (llGetLinkName(link) == "ChessFrame")
-                showDialog(id);
-            else if (link == 1) {  //* 1 is the root CheadBoard
-                vector p = llDetectedTouchPos(0);
-                touched(p);
-            }
+        integer link = llDetectedLinkNumber(0);
+        if (llGetLinkName(link) == "ChessFrame")
+            showDialog(id);
+        else if (link == 1) {  //* 1 is the root CheadBoard
+            vector p = llDetectedTouchPos(0);
+            touched(p);
         }
     }
 
@@ -710,8 +698,14 @@ default
                     llSay(0, "You are not registered to leave");
                 }
             }
-            else if (message == "new" ) {
-                newBoard();
+            else if (message == "setup" ) {
+                if(llGetPermissionsKey() != llDetectedKey(0))
+                {
+                    link_perm = FALSE;
+                    llSay(0, "Please give permission to link and unlink");
+                    llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
+                }
+
             }
             else if (message == "clear" ) {
                 clearBoard();
