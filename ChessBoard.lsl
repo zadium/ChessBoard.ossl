@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 742
+    @revision: 776
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -16,8 +16,6 @@
         https://gbud.in/blog/game/chess/chess-fen-forsyth-edwards-notation.html#castling-availability
 
 /** Options **/
-string token = "";
-key http_request_id;
 
 integer debug_mode = TRUE;
 integer owner_only = FALSE;
@@ -40,6 +38,9 @@ string default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 integer turn = 0;
 integer start_move = 0;
 
+string token = "";
+key http_request_id;
+
 list pieces = [
     "King",
     "Queen",
@@ -49,17 +50,11 @@ list pieces = [
     "Pawn"
 ];
 
-list p = [
+list pList = [
     "k", "q", "r", "b", "n", "p"
 ];
 
 //* Piece color List by color used when rez to give names
-list pNames = [
-    "kw", "qw", "rw", "bw", "nw", "pw",
-    "kb", "qb", "rb", "bb", "nb", "pb"
-];
-
-//* Piece color List by color as FEN format
 list fenNames = [
     "K", "Q", "R", "B", "N", "P",
     "k", "q", "r", "b", "n", "p"
@@ -68,14 +63,14 @@ list fenNames = [
 //* initial board
 list InitBoard =
 [
-    "pb", "pb", "pb", "pb", "pb", "pb", "pb", "pb",
-    "rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb",
-    "",   "",   "",   "",   "",   "",   "",   "",
-    "",   "",   "",   "",   "",   "",   "",   "",
-    "",   "",   "",   "",   "",   "",   "",   "",
-    "",   "",   "",   "",   "",   "",   "",   "",
-    "pw", "pw", "pw", "pw", "pw", "pw", "pw", "pw",
-    "rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"
+    "p", "p", "p", "p", "p", "p", "p", "p",
+    "r", "n", "b", "q", "k", "b", "n", "r",
+    "",  "",  "",  "",  "",  "",  "",  "",
+    "",  "",  "",  "",  "",  "",  "",  "",
+    "",  "",  "",  "",  "",  "",  "",  "",
+    "",  "",  "",  "",  "",  "",  "",  "",
+    "P", "P", "P", "P", "P", "P", "P", "P",
+    "R", "N", "B", "Q", "K", "B", "N", "R"
 ];
 
 list EmptyBoard =
@@ -116,9 +111,9 @@ printBoard()
         while (x < 8) {
             if (x != 0)
                 s += " ";
-            name = getSquareName(x, y);
+            name = getBoardPlot(x, y);
             if (name =="")
-                name = "--";
+                name = "-";
             s += name;
             x++;
         }
@@ -132,25 +127,26 @@ list board;
 list keys;
 
 //*------------------------------------*//
-string getSquareName(integer x, integer y)
+string getBoardPlot(integer x, integer y)
 {
     integer index = y * 8 + x;
+    //llOwnerSay((string)x+","+(string)y+" " +llList2String(board, index));
     return llList2String(board, index);
 }
 
-setSquareName(integer x, integer y, string piece)
+setBoardPlot(integer x, integer y, string piece)
 {
     integer index = y * 8 + x;
     board = llListReplaceList(board, [piece], index, index);
 }
 
-string getSquareID(integer x, integer y)
+string getPlotID(integer x, integer y)
 {
     integer index = y * 8 + x;
     return llList2String(keys, index);
 }
 
-setSquareID(integer x, integer y, string piece)
+setPlotID(integer x, integer y, string piece)
 {
     integer index = y * 8 + x;
     keys = llListReplaceList(keys, [piece], index, index);
@@ -169,6 +165,7 @@ vector to_place = <0, 0, 0>;
 
 integer active_link;
 integer link_perm = FALSE;
+integer perm_function = 0;
 
 integer PIN = 1;
 string ScriptUpdate = "Piece";
@@ -250,15 +247,16 @@ showByName(string name, float x, float y, integer show){
 
 integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
 {
-    string p = getSquareName(x1, y1);
-    key k = getSquareID(x1, y1);
+    string p = getBoardPlot(x1, y1);
+
+    key k = getPlotID(x1, y1);
     if (k != NULL_KEY)
     {
-        setSquareName(x1, y1, "");
-        setSquareName(x2, y2, p);
+        setBoardPlot(x1, y1, "");
+        setBoardPlot(x2, y2, p);
 
-        setSquareID(x1, y1, NULL_KEY);
-        setSquareID(x2, y2, k);
+        setPlotID(x1, y1, NULL_KEY);
+        setPlotID(x2, y2, k);
 
         setPlaceByKey(k, x2, y2);
         //setPlace()
@@ -282,22 +280,23 @@ tryMove(integer x1, integer y1, integer x2, integer y2)
 }
 
 //* try to highlight the move, then move a piece, using a string, example b2b4 or b2 b4
-integer text_move(string msg) {
+integer text_move(string msg)
+{
     integer c = llStringLength(msg);
     if ((c == 4) || ((c == 5) && (llGetSubString(msg, 2, 2) == " ")))
     {
         integer i = 0;
-        integer x1 = llOrd(msg, i)-97;
+        integer x1 = llOrd(msg, i)-98;
         i++;
-        integer y1 = llOrd(msg, i)-48;
-
+        integer y1 = llOrd(msg, i)-49;
         if (c == 5)
             i++;
         i++;
-        integer x2 = llOrd(msg, i)-97;
+        integer x2 = llOrd(msg, i)-98;
         i++;
-        integer y2 = llOrd(msg, i)-48;
-        if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0)) {
+        integer y2 = llOrd(msg, i)-49;
+        if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0))
+        {
             //* TODO move a piece here after check if it valide move
             tryMove(x1, y1, x2, y2);
             return TRUE;
@@ -310,7 +309,7 @@ integer text_move(string msg) {
 }
 
 string guessName(integer index) {
-    return llList2String(pNames, index); //* yes -1 based on 0
+    return llList2String(fenNames, index); //* yes -1 based on 0
 }
 
 list rez_places = [];
@@ -378,12 +377,13 @@ setupBoard()
 }
 
 clearBoard(){
+    llOwnerSay("Clearing Board");
     integer c = llGetNumberOfPrims();
     integer i = 1; //based on 1
     list l;
     while(i <= c)
     {
-        if (llListFindList(pNames, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
+        if (llListFindList(fenNames, [llGetLinkName(i)])>=0) //* llGetLinkName based on 1
         {
             //llBreakLink(i);
             l += [llGetLinkKey(i)];
@@ -442,15 +442,15 @@ initialize(){
     {
         string name = llGetLinkName(i);
         key id = llGetLinkKey(i);
-        if (llListFindList(pNames, [name]) >= 0)
+        if (llListFindList(fenNames, [name]) >= 0)
         {
             list values = llGetLinkPrimitiveParams(i, [PRIM_POS_LOCAL]);
             vector p = llList2Vector(values, 0);
             integer x = llCeil(p.x / unit.x) + 3;
             integer y = llCeil(p.y / unit.y) + 3;
             //llOwnerSay("found " + name + " in " + (string)x+"," +(string)y);
-            setSquareName(x, y, name);
-            setSquareID(x, y, id);
+            setBoardPlot(x, y, name);
+            setPlotID(x, y, id);
         }
         i++;
     }
@@ -487,12 +487,10 @@ setFen(string fen)
                 integer c = (integer)ch;
                 integer i;
                 for (i = 0; i< c ; i++)
-                    board += [" "];
+                    board += [""];
             }
-            else if(isLower(ch))
-                board += [ch+"b"];
             else
-                board += [llToLower(ch)+"w"];
+                board += [ch];
         }
         i++;
     }
@@ -594,7 +592,10 @@ default
         if (perm & PERMISSION_CHANGE_LINKS)
         {
             link_perm = TRUE;
-            setupBoard();
+            if (perm_function==1)
+                setupBoard();
+            else if (perm_function==2)
+                clearBoard();
         }
         else
             llOwnerSay("Can't link objects.");
@@ -613,7 +614,7 @@ default
         string name = guessName((integer)v.z);
         vector color;
         rotation rot = llList2Rot(llGetLinkPrimitiveParams(index, [PRIM_ROT_LOCAL]), 0);
-        if (llGetSubString(name, 1, 1) == "b")
+        if (isLower(name))
         {
             color = <0.15, 0.15, 0.15>;
             rot = rot * llEuler2Rot(<0, 0, PI>);
@@ -623,7 +624,7 @@ default
         }
         llSetLinkPrimitiveParamsFast(index, [PRIM_NAME, name, PRIM_ROT_LOCAL, rot, PRIM_COLOR, ALL_SIDES, color, 1.0, PRIM_BUMP_SHINY, ALL_SIDES, PRIM_SHINY_LOW, PRIM_BUMP_NONE]);
         setLinkPlace(index, (integer)v.x, (integer)v.y);
-        setSquareID((integer)v.x, (integer)v.y, id);
+        setPlotID((integer)v.x, (integer)v.y, id);
     }
 
     changed(integer change)
@@ -711,13 +712,24 @@ default
                 if(llGetPermissionsKey() != llDetectedKey(0))
                 {
                     link_perm = FALSE;
+                    perm_function = 1;
                     llSay(0, "Please give permission to link and unlink");
                     llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
                 }
-
+                else
+                    setupBoard();
             }
-            else if (message == "clear" ) {
-                clearBoard();
+            else if (message == "clear" )
+            {
+                if(llGetPermissionsKey() != llDetectedKey(0))
+                {
+                    link_perm = FALSE;
+                    perm_function = 2;
+                    llSay(0, "Please give permission to link and unlink");
+                    llRequestPermissions(id, PERMISSION_CHANGE_LINKS);
+                }
+                else
+                    clearBoard();
             }
             else if (message == "account" )
             {
