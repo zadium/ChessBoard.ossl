@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 680
+    @revision: 742
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -35,6 +35,7 @@ integer STATE_AI = 3;
 
 /** Variables **/
 
+string default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 integer turn = 0;
 integer start_move = 0;
@@ -49,46 +50,19 @@ list pieces = [
 ];
 
 list p = [
-    "k",
-    "q",
-    "r",
-    "b",
-    "n",
-    "p"
+    "k", "q", "r", "b", "n", "p"
 ];
 
 //* Piece color List by color used when rez to give names
 list pNames = [
-    "kw",
-    "qw",
-    "rw",
-    "bw",
-    "nw",
-    "pw",
-
-    "kb",
-    "qb",
-    "rb",
-    "bb",
-    "nb",
-    "pb"
+    "kw", "qw", "rw", "bw", "nw", "pw",
+    "kb", "qb", "rb", "bb", "nb", "pb"
 ];
 
 //* Piece color List by color as FEN format
 list fenNames = [
-    "K",
-    "Q",
-    "R",
-    "B",
-    "N",
-    "P",
-
-    "k",
-    "q",
-    "r",
-    "b",
-    "n",
-    "p"
+    "K", "Q", "R", "B", "N", "P",
+    "k", "q", "r", "b", "n", "p"
 ];
 
 //* initial board
@@ -130,6 +104,7 @@ list EmptyKeys =
 
 printBoard()
 {
+    llSay(0, "Board\n");
     integer x = 0;
     integer y = 7;
     string s;
@@ -153,9 +128,9 @@ printBoard()
 }
 
 list moves; //* list of moves from begining
-
 list board;
 list keys;
+
 //*------------------------------------*//
 string getSquareName(integer x, integer y)
 {
@@ -180,8 +155,8 @@ setSquareID(integer x, integer y, string piece)
     integer index = y * 8 + x;
     keys = llListReplaceList(keys, [piece], index, index);
 }
-//*------------------------------------*//
 
+//*------------------------------------*//
 
 vector unit;
 vector size;
@@ -203,11 +178,12 @@ string ScriptUpdate = "Piece";
 integer getLinkByKey(key id) {
     if (id == NULL_KEY)
         return -1;
-    integer c = llGetNumberOfPrims();
-    integer i = 1; //based on 1
-    while(i <= c)
+
+    integer c = llGetNumberOfPrims() + 1; //* self not included
+    integer i = 0; //based on 1
+    while(i < c)
     {
-        if (llGetLinkKey(i) == id) // llGetLinkName based on 1
+        if (llGetLinkKey(i) == id)
             return i;
         i++;
     }
@@ -272,7 +248,6 @@ showByName(string name, float x, float y, integer show){
     }
 }
 
-
 integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
 {
     string p = getSquareName(x1, y1);
@@ -291,27 +266,6 @@ integer movePiece(integer x1, integer y1, integer x2, integer y2, integer kill)
     }
     else
         return FALSE;
-}
-
-list chars = ["a", "b", "c", "d", "e", "f", "g", "h"];
-list numbers = ["1", "2", "3", "4", "5", "6", "7", "8"];
-
-integer indexOfChar(string s, integer index)
-{
-    return llListFindList(chars, [llGetSubString(s, index, index)]);
-/*  llOrd not exists yet in some servers
-    s = llToLower(s);
-    integer i = (llOrd(s, index) - llOrd("a", 0));
-    if ((i>=0) && (i<=7))
-        return i;
-    else
-        return -1;
-*/
-}
-
-integer indexOfNumber(string s, integer index)
-{
-    return llListFindList(numbers, [llGetSubString(s, index, index)]);
 }
 
 highlight(integer x1, integer y1, integer x2, integer y2)
@@ -333,15 +287,16 @@ integer text_move(string msg) {
     if ((c == 4) || ((c == 5) && (llGetSubString(msg, 2, 2) == " ")))
     {
         integer i = 0;
-        integer x1 = indexOfChar(msg, i);
+        integer x1 = llOrd(msg, i)-97;
         i++;
-        integer y1 = indexOfNumber(msg, i);
+        integer y1 = llOrd(msg, i)-48;
+
         if (c == 5)
             i++;
         i++;
-        integer x2 = indexOfChar(msg, i);
+        integer x2 = llOrd(msg, i)-97;
         i++;
-        integer y2 = indexOfNumber(msg, i);
+        integer y2 = llOrd(msg, i)-48;
         if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0)) {
             //* TODO move a piece here after check if it valide move
             tryMove(x1, y1, x2, y2);
@@ -501,6 +456,55 @@ initialize(){
     }
 }
 
+integer isDigit(string ch)
+{
+    return (llOrd(ch, 0) >= 48) && (llOrd(ch, 0) <= 57);
+}
+
+integer isLower(string ch)
+{
+    return llOrd(ch, 0) >= 97;
+}
+
+setFen(string fen)
+{
+//    list board;
+    board = [];
+
+    list parts = llParseString2List(fen, [" "], []);
+    fen = llList2String(parts, 0);
+
+    integer len=llStringLength(fen);
+    integer i=0;
+    string ch = "";
+    while (i<len)
+    {
+        ch = llGetSubString(fen, i, i);
+        if (ch !="/")
+        {
+            if (isDigit(ch))
+            {
+                integer c = (integer)ch;
+                integer i;
+                for (i = 0; i< c ; i++)
+                    board += [" "];
+            }
+            else if(isLower(ch))
+                board += [ch+"b"];
+            else
+                board += [llToLower(ch)+"w"];
+        }
+        i++;
+    }
+    integer c = llGetListLength(board)-64;
+    if (c > 0)
+    {
+        integer i;
+        for (i = 0; i< c ; i++)
+            board += [" "];
+    }
+}
+
 key toucher_id;
 integer dialog_channel;
 integer cur_page; //* current menu page
@@ -523,10 +527,11 @@ list getMenuList(key id, integer owner) {
     else
         l += ["-"];
 
+    l += ["New"];
     l += ["Setup"];
     l += ["Clear"];
-    l += ["Token"];
-    l += ["Account"];
+//    l += ["Token"];
+//    l += ["Account"];
     // Abandon
     // Resign
     return l;
@@ -567,12 +572,16 @@ default
     {
         dialog_channel = -1 - (integer)("0x" + llGetSubString( (string) llGetKey(), -7, -1) );
 
-        board = InitBoard;
+        board = EmptyBoard;
+        //
+        setFen(default_fen);
+        printBoard();
         resized();
         setPlaceByName("ActiveFrom", 0, 0);
         setPlaceByName("ActiveTo", 0, 2);
         initialize();
         llListen(0, "", NULL_KEY, "");
+        llOwnerSay("Board is ready!");
     }
 
     on_rez(integer number)
@@ -582,7 +591,6 @@ default
 
     run_time_permissions(integer perm)
     {
-
         if (perm & PERMISSION_CHANGE_LINKS)
         {
             link_perm = TRUE;
@@ -653,7 +661,8 @@ default
 
     listen(integer channel, string name, key id, string message)
     {
-        if (channel == 0) {
+        if (channel == 0)
+        {
             if (llToLower(message) == "/print board")
                 printBoard();
             else
