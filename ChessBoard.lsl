@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 803
+    @revision: 983
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -112,8 +112,9 @@ printBoard()
             if (x != 0)
                 s += " ";
             name = getBoardPlot(x, y);
-            if (name =="")
-                name = "-";
+            if (name =="" || name == " ")
+                name = ".";
+            name = llChar(0xFF21+llOrd(name, 0)-65);
             s += name;
             x++;
         }
@@ -285,13 +286,13 @@ integer text_move(string msg)
     if ((c == 4) || ((c == 5) && (llGetSubString(msg, 2, 2) == " ")))
     {
         integer i = 0;
-        integer x1 = llOrd(msg, i)-98;
+        integer x1 = llOrd(msg, i)-97;
         i++;
         integer y1 = llOrd(msg, i)-49;
         if (c == 5)
             i++;
         i++;
-        integer x2 = llOrd(msg, i)-98;
+        integer x2 = llOrd(msg, i)-97;
         i++;
         integer y2 = llOrd(msg, i)-49;
         if ((x1>=0) && (y1>=0) && (x2>=0) && (y2>=0))
