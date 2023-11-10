@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 776
+    @revision: 803
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -22,9 +22,8 @@ integer owner_only = FALSE;
 
 /** Consts **/
 
-integer none = 0;
-integer white = 1;
-integer black = 2;
+integer white = 0;
+integer black = 1;
 
 integer STATE_NONE = 0;
 integer STATE_TV = 1;
@@ -35,8 +34,9 @@ integer STATE_AI = 3;
 
 string default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-integer turn = 0;
-integer start_move = 0;
+integer turn = 0; //* 0 = white 1 = black
+
+integer start_move = 0; //* when click first plot to start move
 
 string token = "";
 key http_request_id;
@@ -50,7 +50,7 @@ list pieces = [
     "Pawn"
 ];
 
-list pList = [
+list names = [
     "k", "q", "r", "b", "n", "p"
 ];
 
@@ -163,7 +163,6 @@ key player_black = NULL_KEY;
 vector from_place = <0, 0, 0>; //* used to detect of set, if z = 1 it is set, of 0 not set
 vector to_place = <0, 0, 0>;
 
-integer active_link;
 integer link_perm = FALSE;
 integer perm_function = 0;
 
@@ -473,6 +472,7 @@ setFen(string fen)
 
     list parts = llParseString2List(fen, [" "], []);
     fen = llList2String(parts, 0);
+    turn = llList2String(parts, 1) == "b";
 
     integer len=llStringLength(fen);
     integer i=0;
@@ -501,6 +501,51 @@ setFen(string fen)
         for (i = 0; i< c ; i++)
             board += [" "];
     }
+}
+
+string getFen()
+{
+    integer count = llGetListLength(board);
+    integer i = 0;
+    string fen = "";
+    string plot;
+    integer spaces = 0;
+    integer col = 0;
+    integer row = 0;
+    while (i<count)
+    {
+        plot = llList2String(board, i);
+        if ((plot=="") || (plot==" "))
+            spaces++;
+        else
+        {
+            if (spaces>0)
+            {
+                fen += (string)spaces;
+                spaces = 0;
+            }
+            fen += plot;
+        }
+        col++;
+        if (col>7)
+        {
+            col=0;
+            if (spaces>0)
+            {
+                fen += (string)spaces;
+                spaces = 0;
+            }
+            if (row<7)
+                fen += "/";
+            row++;
+        }
+        i++;
+    }
+    if (turn)
+        fen += " b";
+    else
+        fen += " w";
+    return fen;
 }
 
 key toucher_id;
@@ -664,7 +709,11 @@ default
     {
         if (channel == 0)
         {
-            if (llToLower(message) == "/print board")
+            if (llToLower(message) == "/print fen")
+            {
+                llOwnerSay(getFen());
+            }
+            else if (llToLower(message) == "/print board")
                 printBoard();
             else
                 text_move(message);
