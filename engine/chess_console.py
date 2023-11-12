@@ -11,8 +11,8 @@ License information:
 """
 from Chessnut import Game
 from Chessnut.game import InvalidMove
-from colorama import init, Fore, Back, Style
 from pystockfish import *
+from colorama import init, Fore, Back, Style
 
 #init_fen = "rnbqkbnr/pp2pppp/8/3p4/8/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1"
 init_fen = "r1bqkbnr/p1pp1ppp/1pn5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1"
@@ -22,7 +22,6 @@ deep = Engine(depth=6)
 init(autoreset=True)
 
 game = Game(init_fen)
-#game.apply_move(move)
 
 def print_fen():
     global game
@@ -82,6 +81,7 @@ def print_state():
         print(status+"\n")
 
 #print('\u2654')
+print_board()
 
 while True:
 
