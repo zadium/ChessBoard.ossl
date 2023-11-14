@@ -62,7 +62,7 @@ def try_move(game, move):
 
     return True
 
-@app.get("/move/{uid}/{move}")
+@app.get("/{uid}/move/{move}")
 async def set_move(uid: str, move: str, q: str = None):
     global sequance
 
@@ -72,6 +72,7 @@ async def set_move(uid: str, move: str, q: str = None):
         game = find_game(uid)
         if game == None:
             return {
+                "command": "move",
                 "uid": uid,
                 "seq": sequance,
                 "result": "error",
@@ -93,6 +94,7 @@ async def set_move(uid: str, move: str, q: str = None):
             #if game.status < Game.CHECKMATE:
 
         return {
+            "command": "move",
             "uid": uid,
             "seq": sequance,
             "result": "ok",
@@ -102,6 +104,7 @@ async def set_move(uid: str, move: str, q: str = None):
         }
     else:
         return {
+            "command": "move",
             "uid": uid,
             "seq": sequance,
             "result": "error",
@@ -109,10 +112,11 @@ async def set_move(uid: str, move: str, q: str = None):
             "move": move
         }
 
-@app.get("/fen/{uid}/{fen}")
+@app.get("/{uid}/fen/{fen}")
 async def set_fen(uid: str, fen: str, q: str = None):
     global sequance
     return {
+        "command": "fen",
         "uid": uid,
         "seq": sequance,
         "result": "ok",
@@ -120,7 +124,7 @@ async def set_fen(uid: str, fen: str, q: str = None):
         "bestmove": move
     }
 
-@app.get("/new/{uid}")
+@app.get("/{uid}/new/{depth}")
 async def set_new(uid: str,q: str = None):
     global sequance
 
@@ -141,6 +145,7 @@ async def set_new(uid: str,q: str = None):
 
     game.deep = Engine(depth=6)
     return {
+        "command": "new",
         "uid": uid,
         "seq": sequance,
         "result": "ok",
@@ -149,7 +154,7 @@ async def set_new(uid: str,q: str = None):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=82)
 
     #ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     #ssl_context.load_cert_chain(certfile="certificate.crt", keyfile="private.key")
