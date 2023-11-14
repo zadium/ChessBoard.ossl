@@ -28,7 +28,8 @@ default
 
     touch(integer num_detected)
     {
-        llMessageLinked(LINK_ROOT, llGetStartParameter(), "touch", llGetKey());
+        if (llGetObjectDesc() == "piece")
+            llMessageLinked(LINK_ROOT, llGetStartParameter(), "touch", llGetKey());
     }
 
     changed(integer change)

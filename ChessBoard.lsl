@@ -4,7 +4,7 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 983
+    @revision: 995
     @localfile: ?defaultpath\Chess\?@name.lsl
     @license: MIT
 
@@ -39,7 +39,6 @@ integer turn = 0; //* 0 = white 1 = black
 integer start_move = 0; //* when click first plot to start move
 
 string token = "";
-key http_request_id;
 
 list pieces = [
     "King",
@@ -689,21 +688,26 @@ default
             vector p = llDetectedTouchPos(0);
             touched(p);
         }
-    }
-
-    link_message( integer sender_num, integer num, string str, key id )
-    {
-        if (str=="touch") {
-            list values = llGetLinkPrimitiveParams(sender_num, [PRIM_POSITION]);
-            vector p = llList2Vector(values, 0);
-            touched(p);
+        else //* a Piece touched
+        {
+            list l = llGetLinkPrimitiveParams(link, [PRIM_NAME, PRIM_POSITION]);
+            string name = llList2String(l, 0);
+            if (llListFindList(fenNames, [name])>=0) //* only chess pieces can move
+            {
+                vector pos = llList2Vector(l, 1);
+                touched(pos);
+            }
         }
     }
 
-    http_response(key request_id, integer status, list metadata, string body)
+    link_message( integer sender_num, integer num, string message, key id )
     {
-        //llSay(0, llJsonGetValue(body, ["id"]));
-        //llSay(0, body);
+        list params = llParseStringKeepNulls(message,[" "],[""]);
+        string cmd = llList2String(params, 0);
+        if (cmd=="move")
+        {
+            string move = llList2String(params, 1);
+        }
     }
 
     listen(integer channel, string name, key id, string message)
@@ -780,11 +784,6 @@ default
                 }
                 else
                     clearBoard();
-            }
-            else if (message == "account" )
-            {
-                //http_request_id = llHTTPRequest("https://lichess.org/api/account", [HTTP_METHOD, "GET", HTTP_CUSTOM_HEADER, "Authorization", "Bearer "+ token], "");
-                //http_request_id = llHTTPRequest("https://lichess.org/api/tv/feed", [HTTP_METHOD, "GET"], "");
             }
             else if (message == "white" ) {
                 if (player_white == NULL_KEY) {
