@@ -8,6 +8,8 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
 
 https://creativecommons.org/licenses/by-nc-sa/4.0/
 
+![ScreenShot](https://github.com/zadium/ChessBoard.ossl/assets/111429928/113e9fad-dc7c-48e7-8222-e4652a0dc238)
+
 ## Steps
 
 ### Chess board
