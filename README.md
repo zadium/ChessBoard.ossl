@@ -52,8 +52,6 @@ https://www.turbosquid.com/3d-models/3d-chess-board-chessboard-1679167
 
 ## Textures
 
-https://www.sketchuptextureclub.com/textures/architecture/wood/fine-wood/dark-wood
-
 ## References
 
 https://www.dubrovnikchessmen.com/chessmen-design-evolution.html
