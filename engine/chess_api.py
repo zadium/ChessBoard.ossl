@@ -1,4 +1,13 @@
 """
+    @name: chess_api
+    @description: chess rest api server to accept fen format, to check move and result best move, using stockfish.
+    @author: Zai Dium
+    @update: 2022-02-16
+    @version: 1.1
+    @revision: 1
+    @localfile: ?defaultpath\Chess\?@name.lsl
+    @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
+
 This Python script is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 
 You should have received a copy of the license along with this work. If not, see <https://creativecommons.org/licenses/by-nc-sa/4.0/>.

@@ -1,4 +1,13 @@
 """
+    @name: chess_console
+    @description: chess in console, using stockfish.
+    @author: Zai Dium
+    @update: 2022-02-16
+    @version: 1.1
+    @revision: 1
+    @localfile: ?defaultpath\Chess\?@name.lsl
+    @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
+
 This Python script is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 
 You should have received a copy of the license along with this work. If not, see <https://creativecommons.org/licenses/by-nc-sa/4.0/>.
@@ -14,8 +23,9 @@ from Chessnut.game import InvalidMove
 from pystockfish import *
 from colorama import init, Fore, Back, Style
 
+init_fen = "rnbqkb1r/1ppp1ppp/p6n/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1"
 #init_fen = "rnbqkbnr/pp2pppp/8/3p4/8/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1"
-init_fen = "r1bqkbnr/p1pp1ppp/1pn5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1"
+#init_fen = "r1bqkbnr/p1pp1ppp/1pn5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1"
 ## f3f7
 deep = Engine(depth=6)
 
@@ -123,5 +133,4 @@ while True:
                     respond = deep.bestmove()
                     move = respond["move"]
                     try_move(move)
-
                     print_board()
