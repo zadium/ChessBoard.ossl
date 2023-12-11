@@ -4,9 +4,9 @@
     @author: Zai Dium
     @update: 2022-02-16
     @version: 1.19
-    @revision: 995
+    @revision: 1061
     @localfile: ?defaultpath\Chess\?@name.lsl
-    @license: MIT
+    @license: by-nc-sa [https://creativecommons.org/licenses/by-nc-sa/4.0/]
 
     @notice:
 
@@ -408,7 +408,7 @@ resized()
     unit.y = size.y / 8;
 }
 
-touched(vector p) {
+touch_xy(vector p) {
     list values = llGetLinkPrimitiveParams(LINK_THIS, [PRIM_POSITION, PRIM_ROTATION]);
     vector center = llList2Vector(values, 0);
     p = (p - center) / llList2Rot(values, 1);
@@ -686,16 +686,16 @@ default
             showDialog(id);
         else if (link == 1) {  //* 1 is the root CheadBoard
             vector p = llDetectedTouchPos(0);
-            touched(p);
+            touch_xy(p);
         }
-        else //* a Piece touched
+        else //* a Piece touch_xy
         {
             list l = llGetLinkPrimitiveParams(link, [PRIM_NAME, PRIM_POSITION]);
             string name = llList2String(l, 0);
             if (llListFindList(fenNames, [name])>=0) //* only chess pieces can move
             {
                 vector pos = llList2Vector(l, 1);
-                touched(pos);
+                touch_xy(pos);
             }
         }
     }
